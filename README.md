@@ -4,6 +4,10 @@ This repository contains the data and code for the manuscript **"Satellite Embed
 
 The repository is organized so reviewers can reproduce the modelling analysis directly from the public analysis-ready predictor matrix. Separate extraction scripts document how CHM, MSI, and AlphaEarth satellite-embedding predictors were generated from raw spatial data.
 
+## Methodological framework
+
+![Methodological framework](figures/methodological_framework.png)
+
 ## Repository structure
 
 ```text
