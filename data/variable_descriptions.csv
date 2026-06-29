@@ -1,0 +1,196 @@
+variable,group,description
+Name,Identifier,Plot identifier used to join field and predictor data.
+SE2025_B01_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B02_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B03_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B04_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B05_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B06_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B07_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B08_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B09_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B10_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B11_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B12_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B13_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B14_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B15_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B16_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B17_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B18_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B19_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B20_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B21_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B22_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B23_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B24_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B25_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B26_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B27_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B28_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B29_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B30_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B31_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B32_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B33_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B34_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B35_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B36_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B37_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B38_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B39_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B40_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B41_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B42_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B43_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B44_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B45_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B46_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B47_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B48_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B49_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B50_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B51_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B52_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B53_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B54_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B55_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B56_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B57_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B58_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B59_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B60_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B61_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B62_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B63_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_B64_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_mean_across_bands,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_std_across_bands,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_min_band_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+SE2025_max_band_mean,SE,AlphaEarth 2025 satellite-embedding band mean over the 15 m plot footprint.
+R_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+R_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+R_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+R_p50,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+R_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+G_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+G_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+G_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+G_p50,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+G_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+B_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+B_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+B_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+B_p50,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+B_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NIR_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NIR_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_min,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+GNDVI_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+GNDVI_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+GNDVI_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+GNDVI_p50,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+GNDVI_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDWI_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDWI_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDWI_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDWI_p50,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDWI_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+VARI_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+VARI_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+VARI_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+VARI_p50,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+VARI_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+ExG_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+ExG_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+ExG_min,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+ExG_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+ExG_p50,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+ExG_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+brightness_mean,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+brightness_std,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+brightness_max,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+brightness_p50,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+brightness_p90,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_fraction_above_0_5,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_fraction_above_0_6,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+brightness_p90_minus_p10,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_texture_contrast,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+NDVI_texture_homogeneity,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+brightness_texture_homogeneity,MSI,"Aerial RGB-NIR/MSI band, vegetation-index, brightness, fraction, or texture predictor."
+dSE_B01_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B02_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B03_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B04_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B05_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B06_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B07_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B08_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B09_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B10_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B11_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B12_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B13_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B14_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B15_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B16_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B17_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B18_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B19_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B20_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B21_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B22_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B23_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B24_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B25_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B26_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B27_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B28_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B29_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B30_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B31_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B32_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B33_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B34_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B35_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B36_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B37_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B38_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B39_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B40_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B41_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B42_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B43_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B44_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B45_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B46_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B47_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B48_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B49_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B50_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B51_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B52_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B53_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B54_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B55_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B56_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B57_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B58_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B59_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B60_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B61_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B62_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B63_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_B64_mean,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_mean_across_bands,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+dSE_std_across_bands,SE temporal change,Temporal-change AlphaEarth satellite-embedding predictor.
+CHM_mean,CHM,Canopy-height model predictor derived from Finnish Forest Centre Latvusmalli CHM.
+CHM_cv,CHM,Canopy-height model predictor derived from Finnish Forest Centre Latvusmalli CHM.
+CHM_sd,CHM,Canopy-height model predictor derived from Finnish Forest Centre Latvusmalli CHM.
+CHM_max,CHM,Canopy-height model predictor derived from Finnish Forest Centre Latvusmalli CHM.
+CHM_p90,CHM,Canopy-height model predictor derived from Finnish Forest Centre Latvusmalli CHM.
+Dead_F,Response,Standing dead-tree volume fraction.

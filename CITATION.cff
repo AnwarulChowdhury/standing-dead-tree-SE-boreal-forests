@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the associated manuscript and this repository."
+type: software
+title: "Satellite Embeddings as Complementary Predictors of Standing Dead-Tree Volume Fraction in Boreal Forests"
+authors:
+  - family-names: Chowdhury
+    given-names: Anwarul Islam
+  - family-names: Ahishali
+    given-names: Mete
+  - family-names: Vastaranta
+    given-names: Mikko
+  - family-names: Uddin
+    given-names: Md. Jamal
+  - family-names: Junttila
+    given-names: Samuli
+repository-code: "https://github.com/AnwarulChowdhury/standing-dead-tree-SE-boreal-forests"
+license: MIT
+keywords:
+  - tree mortality
+  - dead tree
+  - machine learning
+  - satellite embeddings
+  - boreal forest
+  - canopy height model
+  - multispectral imagery

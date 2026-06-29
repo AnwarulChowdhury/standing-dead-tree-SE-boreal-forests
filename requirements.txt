@@ -1,0 +1,14 @@
+numpy
+pandas
+geopandas
+rasterio
+shapely
+scikit-learn
+scipy
+matplotlib
+xgboost
+shap
+joblib
+tqdm
+openpyxl
+scikit-image
