@@ -2,7 +2,7 @@
 
 This repository contains the data and code for the manuscript **"Satellite Embeddings as Complementary Predictors of Standing Dead-Tree Volume Fraction in Boreal Forests"**.
 
-The repository is organized so reviewers can reproduce the modelling analysis directly from the public analysis-ready predictor matrix. Separate extraction scripts document how CHM, MSI, and AlphaEarth satellite-embedding predictors were generated from raw spatial data.
+The repository is organized so researchers can reproduce the modelling analysis directly from the public analysis-ready predictor matrix. Separate extraction scripts document how CHM, MSI, and AlphaEarth satellite-embedding predictors were generated from raw spatial data.
 
 ## Methodological framework
 
@@ -65,7 +65,7 @@ Run the full modular modelling analysis from the included predictor matrix:
 ```bash
 python scripts/run_all_analysis.py \
   --data data/analysis_ready_predictor_matrix.csv \
-  --out-root results/REANALYSIS \
+  --out-root results/ANALYSIS \
   --figures final \
   --overwrite
 ```
