@@ -1,6 +1,4 @@
 r"""
-Extract CHM metrics from Finnish Forest Centre 1 m Latvusmalli data using
-per-plot fallback.
 
 Outputs
 -------
@@ -28,7 +26,7 @@ from tqdm import tqdm
 
 INDEX_URL = "https://avoin.metsakeskus.fi/aineistot/Latvusmalli/Latvusmalli_indeksi/Latvusmalli_indeksi.zip"
 CHM_ROOT_URL = "https://avoin.metsakeskus.fi/aineistot/Latvusmalli/Karttalehti/"
-PERIOD_PRIORITY = ["uusin"] + [str(y) for y in range(2025, 2007, -1)]
+PERIOD_PRIORITY = ["2025"] + [str(y) for y in range(2024, 2010, -1)]
 
 
 def download_file(url: str, out_path: Path) -> Path:
@@ -229,7 +227,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
             "Extract Finnish Forest Centre 1 m CHM metrics with partial pixel weighting. "
-            "For each plot/map sheet, try uusin first; if zero valid pixels, fallback to the newest older annual file."
+            "For each plot/map sheet, try 2025 first; if zero valid pixels, fallback to the newest older annual file."
         )
     )
     parser.add_argument("--polygons", required=True, help="Input 15 m plot-buffer polygons, e.g. shapefile.")
