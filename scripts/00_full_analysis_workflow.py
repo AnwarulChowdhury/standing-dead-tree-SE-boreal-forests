@@ -184,6 +184,8 @@ _FIGURE_GROUP_KEYWORDS = {
     "shap_all": [
         "figure_o4_",
         "figure_o5_",
+        "algorithm_specific_shap",
+        "top_predictors_a4_exact_style",
         "shap_interaction_complementarity_a4_landscape",
     ],
     "o7_all": ["figure_o7_"],
@@ -1249,10 +1251,11 @@ if hasattr(final_model, "feature_importances_"):
         .sort_values("Importance", ascending=True)
     )
 
+    # Manuscript colours: CHM = blue, MSI/RGB-NIR = orange, SE = green
     group_colors = {
-        "CHM": "tab:blue",
-        "RGB-NIR": "tab:green",
-        "SE": "tab:orange"
+        "CHM": "#6aaed6",
+        "RGB-NIR": "#e7ad72",
+        "SE": "#7bd88f"
     }
 
     plt.figure(figsize=(8, 6))
@@ -1567,10 +1570,11 @@ for algorithm_name in ["RF", "XGBoost", "GradientBoosting"]:
         .sort_values("Importance", ascending=True)
     )
 
+    # Manuscript colours: CHM = blue, MSI/RGB-NIR = orange, SE = green
     group_colors = {
-        "CHM": "tab:blue",
-        "RGB-NIR": "tab:green",
-        "SE": "tab:orange"
+        "CHM": "#6aaed6",
+        "RGB-NIR": "#e7ad72",
+        "SE": "#7bd88f"
     }
 
     plt.figure(figsize=(8, 6))
@@ -2879,10 +2883,11 @@ plot_df = (
     .sort_values("Mean_abs_SHAP", ascending=True)
 )
 
+# Manuscript colours: CHM = blue, MSI/RGB-NIR = orange, SE = green
 group_colors = {
-    "CHM": "tab:blue",
-    "RGB-NIR": "tab:green",
-    "SE": "tab:orange"
+    "CHM": "#6aaed6",
+    "RGB-NIR": "#e7ad72",
+    "SE": "#7bd88f"
 }
 
 plt.figure(figsize=(9, 8))
@@ -2992,6 +2997,237 @@ plt.savefig(
 )
 
 plt.close("all")
+
+
+# ============================================================
+# Objective 4B:
+# Algorithm-specific SHAP importance for RF, GradientBoosting,
+# and XGBoost using CHM + RGBNIR + SE models
+# ============================================================
+
+import joblib
+from pathlib import Path
+
+ALGO_SHAP_DIR = O4_DIR / "O4_algorithm_specific_SHAP"
+ALGO_SHAP_DIR.mkdir(parents=True, exist_ok=True)
+
+print("Algorithm-specific SHAP outputs will be saved to:", ALGO_SHAP_DIR)
+
+pipeline_dir = OUT_DIR / "ImpPred_BestByAlgorithm"
+
+pipeline_files = {
+    "RF": pipeline_dir / "Final_pipeline_best_RF_CHM_plus_RGBNIR_plus_SE.joblib",
+    "GradientBoosting": pipeline_dir / "Final_pipeline_best_GradientBoosting_CHM_plus_RGBNIR_plus_SE.joblib",
+    "XGBoost": pipeline_dir / "Final_pipeline_best_XGBoost_CHM_plus_RGBNIR_plus_SE.joblib",
+}
+
+for model_name, pipeline_file in pipeline_files.items():
+    if not pipeline_file.exists():
+        raise FileNotFoundError(f"Missing fitted pipeline for {model_name}: {pipeline_file}")
+
+
+def clean_model_name_for_plot(model_name):
+    if model_name == "GradientBoosting":
+        return "GB"
+    return model_name
+
+
+def get_group_name_for_shap(feature):
+    if str(feature).startswith("CHM"):
+        return "CHM"
+    elif str(feature).startswith("SE2025") or str(feature).startswith("dSE"):
+        return "SE"
+    else:
+        return "RGB-NIR"
+
+
+all_algorithm_shap_tables = []
+all_algorithm_shap_group_tables = []
+all_algorithm_shap_model_info = []
+
+for algorithm_name, pipeline_file in pipeline_files.items():
+
+    print("\n=====================================")
+    print("Algorithm-specific SHAP:", algorithm_name)
+    print("Pipeline:", pipeline_file)
+    print("=====================================")
+
+    fitted_pipe = joblib.load(pipeline_file)
+
+    selector = fitted_pipe.named_steps["selector"]
+    fitted_model = fitted_pipe.named_steps["model"]
+
+    selected_features_algorithm = selector.get_feature_names_out().tolist()
+
+    X_selected_algorithm = selector.transform(X)
+    X_selected_algorithm = pd.DataFrame(
+        X_selected_algorithm,
+        columns=selected_features_algorithm,
+        index=X.index
+    )
+
+    explainer_algorithm = shap.TreeExplainer(fitted_model)
+    shap_values_algorithm = explainer_algorithm.shap_values(X_selected_algorithm)
+
+    if isinstance(shap_values_algorithm, list):
+        shap_matrix_algorithm = shap_values_algorithm[0]
+    else:
+        shap_matrix_algorithm = np.array(shap_values_algorithm)
+
+    if len(shap_matrix_algorithm.shape) == 3:
+        shap_matrix_algorithm = shap_matrix_algorithm[:, :, 0]
+
+    if shap_matrix_algorithm.shape[1] != len(selected_features_algorithm):
+        raise ValueError(
+            f"SHAP matrix has {shap_matrix_algorithm.shape[1]} columns but "
+            f"{len(selected_features_algorithm)} selected features were found for {algorithm_name}."
+        )
+
+    model_plot_name = clean_model_name_for_plot(algorithm_name)
+
+    shap_algorithm_df = pd.DataFrame({
+        "Model": algorithm_name,
+        "Model_plot": model_plot_name,
+        "Feature_Set": "CHM+RGBNIR+SE",
+        "Predictor": selected_features_algorithm,
+        "Mean_abs_SHAP": np.abs(shap_matrix_algorithm).mean(axis=0),
+        "SD_abs_SHAP": np.abs(shap_matrix_algorithm).std(axis=0)
+    })
+
+    shap_algorithm_df["Group"] = shap_algorithm_df["Predictor"].apply(get_group_name_for_shap)
+
+    shap_algorithm_df = shap_algorithm_df.sort_values(
+        "Mean_abs_SHAP",
+        ascending=False
+    )
+
+    shap_algorithm_df.to_csv(
+        ALGO_SHAP_DIR / f"SHAP_predictor_importance_{model_plot_name}_CHM_plus_RGBNIR_plus_SE.csv",
+        index=False
+    )
+
+    shap_algorithm_df.head(20).to_csv(
+        ALGO_SHAP_DIR / f"SHAP_top20_predictor_importance_{model_plot_name}_CHM_plus_RGBNIR_plus_SE.csv",
+        index=False
+    )
+
+    group_algorithm_df = (
+        shap_algorithm_df
+        .groupby(["Model", "Model_plot", "Feature_Set", "Group"], as_index=False)
+        .agg(
+            Total_Mean_abs_SHAP=("Mean_abs_SHAP", "sum"),
+            Mean_Mean_abs_SHAP=("Mean_abs_SHAP", "mean"),
+            N_Predictors=("Predictor", "count")
+        )
+        .sort_values("Total_Mean_abs_SHAP", ascending=False)
+    )
+
+    group_algorithm_df.to_csv(
+        ALGO_SHAP_DIR / f"SHAP_group_importance_{model_plot_name}_CHM_plus_RGBNIR_plus_SE.csv",
+        index=False
+    )
+
+    all_algorithm_shap_tables.append(shap_algorithm_df)
+    all_algorithm_shap_group_tables.append(group_algorithm_df)
+
+    all_algorithm_shap_model_info.append({
+        "Model": algorithm_name,
+        "Model_plot": model_plot_name,
+        "Feature_Set": "CHM+RGBNIR+SE",
+        "Selected_Features": ", ".join(selected_features_algorithm),
+        "N_Selected_Features": len(selected_features_algorithm),
+        "Pipeline": str(pipeline_file)
+    })
+
+
+all_algorithm_shap_df = pd.concat(
+    all_algorithm_shap_tables,
+    ignore_index=True
+)
+
+all_algorithm_shap_df.to_csv(
+    ALGO_SHAP_DIR / "All_algorithm_specific_SHAP_predictor_importance.csv",
+    index=False
+)
+
+all_algorithm_group_shap_df = pd.concat(
+    all_algorithm_shap_group_tables,
+    ignore_index=True
+)
+
+all_algorithm_group_shap_df.to_csv(
+    ALGO_SHAP_DIR / "All_algorithm_specific_SHAP_group_importance.csv",
+    index=False
+)
+
+pd.DataFrame(all_algorithm_shap_model_info).to_csv(
+    ALGO_SHAP_DIR / "All_algorithm_specific_SHAP_model_information.csv",
+    index=False
+)
+
+
+# ------------------------------------------------------------
+# Overall algorithm-averaged SHAP ranking
+# Missing predictors are treated as zero in algorithms where
+# they were not selected.
+# ------------------------------------------------------------
+
+model_cols = ["RF", "GB", "XGBoost"]
+
+overall_shap_wide = (
+    all_algorithm_shap_df
+    .pivot_table(
+        index=["Predictor", "Group"],
+        columns="Model_plot",
+        values="Mean_abs_SHAP",
+        aggfunc="mean"
+    )
+    .reset_index()
+)
+
+for model_col in model_cols:
+    if model_col not in overall_shap_wide.columns:
+        overall_shap_wide[model_col] = 0.0
+
+overall_shap_wide[model_cols] = overall_shap_wide[model_cols].fillna(0.0)
+
+overall_shap_wide["Mean_abs_SHAP_overall"] = overall_shap_wide[model_cols].mean(axis=1)
+overall_shap_wide["SD_abs_SHAP_across_models"] = overall_shap_wide[model_cols].std(axis=1)
+
+overall_shap_df = overall_shap_wide.sort_values(
+    "Mean_abs_SHAP_overall",
+    ascending=False
+)
+
+overall_shap_df.to_csv(
+    ALGO_SHAP_DIR / "Overall_mean_SHAP_importance_across_algorithms.csv",
+    index=False
+)
+
+overall_shap_df.head(20).to_csv(
+    ALGO_SHAP_DIR / "Table_07a_SHAP_top20_predictor_importance_across_algorithms.csv",
+    index=False
+)
+
+overall_group_shap_df = (
+    overall_shap_df
+    .groupby("Group", as_index=False)
+    .agg(
+        Total_Mean_abs_SHAP_overall=("Mean_abs_SHAP_overall", "sum"),
+        Mean_Mean_abs_SHAP_overall=("Mean_abs_SHAP_overall", "mean"),
+        N_Predictors=("Predictor", "count")
+    )
+    .sort_values("Total_Mean_abs_SHAP_overall", ascending=False)
+)
+
+overall_group_shap_df.to_csv(
+    ALGO_SHAP_DIR / "Overall_SHAP_group_importance_across_algorithms.csv",
+    index=False
+)
+
+print("\nAlgorithm-specific SHAP analysis completed.")
+print("Outputs saved to:", ALGO_SHAP_DIR)
+
 
 # CELL
 
@@ -4263,96 +4499,78 @@ except Exception as exc:
 
 # Optional exact-format manuscript figure section 1
 try:
-    
+
     import pandas as pd
     import matplotlib.pyplot as plt
     from matplotlib.patches import Patch
     from matplotlib.ticker import MultipleLocator, FormatStrFormatter
     from pathlib import Path
-    
+
     # ============================================================
-    # Your data folder
+    # Algorithm-specific SHAP source files
     # ============================================================
-    DATA_DIR = OUT_DIR / "ImpPred_BestByAlgorithm"
-    
-    print("Using data folder:")
+    DATA_DIR = OUT_DIR / "O4_SHAP_and_complementarity" / "O4_algorithm_specific_SHAP"
+
+    print("Using algorithm-specific SHAP data folder:")
     print(DATA_DIR)
-    
-    # ============================================================
-    # Input files
-    # ============================================================
-    all_file = DATA_DIR / "All_best_algorithm_predictor_importances.csv"
-    
-    rf_file = DATA_DIR / "Predictor_importance_best_RF_CHM_plus_RGBNIR_plus_SE.csv"
-    gb_file = DATA_DIR / "Predictor_importance_best_GradientBoosting_CHM_plus_RGBNIR_plus_SE.csv"
-    xgb_file = DATA_DIR / "Predictor_importance_best_XGBoost_CHM_plus_RGBNIR_plus_SE.csv"
-    
-    required_files = [all_file, rf_file, gb_file, xgb_file]
-    
-    for f in required_files:
-        if not f.exists():
-            raise FileNotFoundError(f"File not found:\n{f}")
-    
-    # ============================================================
-    # Read data
-    # ============================================================
+
+    all_file = DATA_DIR / "All_algorithm_specific_SHAP_predictor_importance.csv"
+    overall_file = DATA_DIR / "Overall_mean_SHAP_importance_across_algorithms.csv"
+
+    if not all_file.exists():
+        raise FileNotFoundError(f"File not found:\n{all_file}")
+    if not overall_file.exists():
+        raise FileNotFoundError(f"File not found:\n{overall_file}")
+
     all_df = pd.read_csv(all_file)
-    rf_df = pd.read_csv(rf_file)
-    gb_df = pd.read_csv(gb_file)
-    xgb_df = pd.read_csv(xgb_file)
-    
-    # ============================================================
-    # Clean group names
-    # ============================================================
+    overall_df = pd.read_csv(overall_file)
+
+    if "Mean_abs_SHAP" not in all_df.columns:
+        raise ValueError(f"Expected column 'Mean_abs_SHAP' in {all_file}")
+    if "Mean_abs_SHAP_overall" not in overall_df.columns:
+        raise ValueError(f"Expected column 'Mean_abs_SHAP_overall' in {overall_file}")
+
     def clean_group(group):
-        if group in ["RGB-NIR", "RGBNIR", "MSI"]:
+        if group in ["RGB-NIR", "RGBNIR", "MSI", "RGB_NIR"]:
             return "MSI"
         return group
-    
-    for df in [all_df, rf_df, gb_df, xgb_df]:
-        df["Plot_Group"] = df["Group"].apply(clean_group)
-    
-    # ============================================================
-    # Colors same style as your figure
-    # ============================================================
+
+    all_df["Plot_Group"] = all_df["Group"].apply(clean_group)
+    overall_df["Plot_Group"] = overall_df["Group"].apply(clean_group)
+
+    if "Model_plot" not in all_df.columns:
+        all_df["Model_plot"] = all_df["Model"].replace({"GradientBoosting": "GB"})
+
     group_colors = {
         "CHM": "#6aaed6",
         "MSI": "#e7ad72",
         "SE": "#7bd88f"
     }
-    
-    # ============================================================
-    # Panel data
-    # ============================================================
-    overall_df = (
-        all_df
-        .groupby(["Predictor", "Plot_Group"], as_index=False)["Importance"]
-        .mean()
-        .sort_values("Importance", ascending=False)
+
+    overall_top = (
+        overall_df
+        .sort_values("Mean_abs_SHAP_overall", ascending=False)
         .head(20)
     )
-    
+
     rf_top = (
-        rf_df
-        .sort_values("Importance", ascending=False)
+        all_df[all_df["Model_plot"] == "RF"]
+        .sort_values("Mean_abs_SHAP", ascending=False)
         .head(10)
     )
-    
+
     gb_top = (
-        gb_df
-        .sort_values("Importance", ascending=False)
+        all_df[all_df["Model_plot"] == "GB"]
+        .sort_values("Mean_abs_SHAP", ascending=False)
         .head(10)
     )
-    
+
     xgb_top = (
-        xgb_df
-        .sort_values("Importance", ascending=False)
+        all_df[all_df["Model_plot"] == "XGBoost"]
+        .sort_values("Mean_abs_SHAP", ascending=False)
         .head(10)
     )
-    
-    # ============================================================
-    # Plot settings
-    # ============================================================
+
     plt.rcParams.update({
         "font.family": "DejaVu Sans",
         "font.size": 8,
@@ -4362,49 +4580,38 @@ try:
         "ytick.labelsize": 8,
         "axes.linewidth": 0.9,
     })
-    
+
     fig, axes = plt.subplots(
         2, 2,
-        figsize=(11.69, 8.27),   # A4 landscape
+        figsize=(11.69, 8.27),
         dpi=300
     )
-    
+
     axes = axes.flatten()
-    
-    # ============================================================
-    # Helper function
-    # ============================================================
-    def plot_barh(ax, df, title, panel_label, xlim, tick_step=0.02):
-        df_plot = df.sort_values("Importance", ascending=True)
-    
+
+    def plot_barh(ax, df, value_col, title, panel_label, tick_step=0.02):
+        df_plot = df.sort_values(value_col, ascending=True).copy()
         colors = df_plot["Plot_Group"].map(group_colors)
-    
+        xmax = float(df[value_col].max()) * 1.10 if len(df) else 0.1
+        xmax = max(xmax, 0.01)
+
         ax.barh(
             df_plot["Predictor"],
-            df_plot["Importance"],
+            df_plot[value_col],
             color=colors,
             edgecolor=colors,
             height=0.70
         )
-    
+
         ax.set_title(title, fontweight="bold", pad=6)
         ax.set_xlabel("Mean |SHAP value|")
-    
-        ax.set_xlim(0, xlim)
+        ax.set_xlim(0, xmax)
         ax.xaxis.set_major_locator(MultipleLocator(tick_step))
         ax.xaxis.set_major_formatter(FormatStrFormatter("%.2f"))
-    
-        ax.grid(
-            axis="x",
-            linestyle="--",
-            linewidth=0.6,
-            alpha=0.35
-        )
+        ax.grid(axis="x", linestyle="--", linewidth=0.6, alpha=0.35)
         ax.set_axisbelow(True)
-    
         ax.tick_params(axis="y", labelsize=8)
         ax.tick_params(axis="x", labelsize=8)
-    
         ax.text(
             0.0, 1.04,
             panel_label,
@@ -4414,55 +4621,18 @@ try:
             ha="left",
             va="bottom"
         )
-    
-    # ============================================================
-    # Draw panels
-    # ============================================================
-    plot_barh(
-        axes[0],
-        overall_df,
-        "Overall Top 20 Predictors",
-        "(a)",
-        xlim=0.098,
-        tick_step=0.02
-    )
-    
-    plot_barh(
-        axes[1],
-        rf_top,
-        "RF | Top 10 Predictors",
-        "(b)",
-        xlim=0.09,
-        tick_step=0.02
-    )
-    
-    plot_barh(
-        axes[2],
-        gb_top,
-        "GB | Top 10 Predictors",
-        "(c)",
-        xlim=0.126,
-        tick_step=0.02
-    )
-    
-    plot_barh(
-        axes[3],
-        xgb_top,
-        "XGBoost | Top 10 Predictors",
-        "(d)",
-        xlim=0.155,
-        tick_step=0.02
-    )
-    
-    # ============================================================
-    # Legend
-    # ============================================================
+
+    plot_barh(axes[0], overall_top, "Mean_abs_SHAP_overall", "Overall Top 20 Predictors", "(a)")
+    plot_barh(axes[1], rf_top, "Mean_abs_SHAP", "RF | Top 10 Predictors", "(b)")
+    plot_barh(axes[2], gb_top, "Mean_abs_SHAP", "GB | Top 10 Predictors", "(c)")
+    plot_barh(axes[3], xgb_top, "Mean_abs_SHAP", "XGBoost | Top 10 Predictors", "(d)")
+
     legend_handles = [
         Patch(facecolor=group_colors["CHM"], edgecolor="black", label="CHM"),
         Patch(facecolor=group_colors["MSI"], edgecolor="black", label="MSI"),
         Patch(facecolor=group_colors["SE"], edgecolor="black", label="SE"),
     ]
-    
+
     fig.legend(
         handles=legend_handles,
         loc="lower center",
@@ -4471,10 +4641,7 @@ try:
         bbox_to_anchor=(0.5, 0.035),
         fontsize=8
     )
-    
-    # ============================================================
-    # Layout
-    # ============================================================
+
     plt.subplots_adjust(
         left=0.13,
         right=0.985,
@@ -4483,21 +4650,18 @@ try:
         wspace=0.30,
         hspace=0.26
     )
-    
-    # ============================================================
-    # Save outputs in the same folder
-    # ============================================================
+
     out_png = DATA_DIR / "Top_predictors_A4_exact_style.png"
     out_pdf = DATA_DIR / "Top_predictors_A4_exact_style.pdf"
-    
+
     plt.savefig(out_png, dpi=300)
     plt.savefig(out_pdf)
-    
+
     plt.close("all")
-    
+
     print("Saved PNG to:", out_png)
     print("Saved PDF to:", out_pdf)
-    
+
 except Exception as exc:
     print('Warning: skipped optional exact-format figure section 1:', exc)
     traceback.print_exc(limit=1)
@@ -5288,19 +5452,29 @@ def safe_label(text: str) -> str:
 # ============================================================
 
 def generate_top_predictors(o1_dir: Path, out_dir: Path, dpi: int, xlabel: str) -> None:
-    data_dir = o1_dir / "ImpPred_BestByAlgorithm"
-    all_file = data_dir / "All_best_algorithm_predictor_importances.csv"
+    data_dir = o1_dir / "O4_SHAP_and_complementarity" / "O4_algorithm_specific_SHAP"
+
+    all_file = data_dir / "All_algorithm_specific_SHAP_predictor_importance.csv"
+    overall_file = data_dir / "Overall_mean_SHAP_importance_across_algorithms.csv"
 
     if not all_file.exists():
-        all_file = find_file(o1_dir, "All_best_algorithm_predictor_importances.csv")
-    if all_file is None:
-        raise FileNotFoundError("Could not find All_best_algorithm_predictor_importances.csv")
+        all_file = find_file(o1_dir, "All_algorithm_specific_SHAP_predictor_importance.csv")
+    if not overall_file.exists():
+        overall_file = find_file(o1_dir, "Overall_mean_SHAP_importance_across_algorithms.csv")
+
+    if all_file is None or not Path(all_file).exists():
+        raise FileNotFoundError("Could not find All_algorithm_specific_SHAP_predictor_importance.csv")
+    if overall_file is None or not Path(overall_file).exists():
+        raise FileNotFoundError("Could not find Overall_mean_SHAP_importance_across_algorithms.csv")
 
     all_df = pd.read_csv(all_file)
-    if "Importance" not in all_df.columns:
-        raise ValueError(f"Expected column 'Importance' in {all_file}")
+    overall_df = pd.read_csv(overall_file)
 
-    # Clean group names.
+    if "Mean_abs_SHAP" not in all_df.columns:
+        raise ValueError(f"Expected column 'Mean_abs_SHAP' in {all_file}")
+    if "Mean_abs_SHAP_overall" not in overall_df.columns:
+        raise ValueError(f"Expected column 'Mean_abs_SHAP_overall' in {overall_file}")
+
     def clean_group(group: str) -> str:
         group = str(group)
         if group in ["RGB-NIR", "RGBNIR", "MSI", "RGB_NIR"]:
@@ -5308,7 +5482,10 @@ def generate_top_predictors(o1_dir: Path, out_dir: Path, dpi: int, xlabel: str) 
         return group
 
     all_df["Plot_Group"] = all_df["Group"].apply(clean_group)
-    all_df["Model_plot"] = all_df["Model"].apply(clean_model_name)
+    overall_df["Plot_Group"] = overall_df["Group"].apply(clean_group)
+
+    if "Model_plot" not in all_df.columns:
+        all_df["Model_plot"] = all_df["Model"].apply(clean_model_name)
 
     group_colors = {
         "CHM": "#6aaed6",
@@ -5316,23 +5493,18 @@ def generate_top_predictors(o1_dir: Path, out_dir: Path, dpi: int, xlabel: str) 
         "SE": "#7bd88f",
     }
 
-    model_order_original = ["RF", "GradientBoosting", "XGBoost"]
-    model_titles = {"RF": "RF", "GradientBoosting": "GB", "XGBoost": "XGBoost"}
-
-    overall_df = (
-        all_df.groupby(["Predictor", "Plot_Group"], as_index=False)["Importance"]
-        .mean()
-        .sort_values("Importance", ascending=False)
+    overall_top = (
+        overall_df
+        .sort_values("Mean_abs_SHAP_overall", ascending=False)
         .head(20)
     )
 
     per_model = {}
-    for m in model_order_original:
-        mdf = all_df[all_df["Model"] == m].copy()
+    for m in ["RF", "GB", "XGBoost"]:
+        mdf = all_df[all_df["Model_plot"] == m].copy()
         if mdf.empty:
             continue
-        # If multiple best feature sets somehow appear, use all rows sorted by importance.
-        per_model[m] = mdf.sort_values("Importance", ascending=False).head(10)
+        per_model[m] = mdf.sort_values("Mean_abs_SHAP", ascending=False).head(10)
 
     plt.rcParams.update({
         "font.family": "DejaVu Sans",
@@ -5348,20 +5520,21 @@ def generate_top_predictors(o1_dir: Path, out_dir: Path, dpi: int, xlabel: str) 
     axes = axes.flatten()
 
     def plot_barh(ax, df, title, panel_label, tick_step=0.02):
-        df_plot = df.sort_values("Importance", ascending=True).copy()
+        value_col = "Mean_abs_SHAP_overall" if "Mean_abs_SHAP_overall" in df.columns else "Mean_abs_SHAP"
+        df_plot = df.sort_values(value_col, ascending=True).copy()
         colors = df_plot["Plot_Group"].map(group_colors).fillna("#bdbdbd")
-        xmax = float(df["Importance"].max()) * 1.10 if len(df) else 0.1
+        xmax = float(df[value_col].max()) * 1.10 if len(df) else 0.1
         xmax = max(xmax, 0.01)
 
         ax.barh(
             df_plot["Predictor"],
-            df_plot["Importance"],
+            df_plot[value_col],
             color=colors,
             edgecolor=colors,
             height=0.70,
         )
         ax.set_title(title, fontweight="bold", pad=7)
-        ax.set_xlabel(xlabel)
+        ax.set_xlabel("Mean |SHAP value|")
         ax.set_xlim(0, xmax)
         ax.xaxis.set_major_locator(MultipleLocator(tick_step))
         ax.xaxis.set_major_formatter(FormatStrFormatter("%.2f"))
@@ -5379,10 +5552,10 @@ def generate_top_predictors(o1_dir: Path, out_dir: Path, dpi: int, xlabel: str) 
             clip_on=False,
         )
 
-    plot_barh(axes[0], overall_df, "Overall Top 20 Predictors", "(a)")
-    plot_barh(axes[1], per_model.get("RF", overall_df.head(10)), "RF | Top 10 Predictors", "(b)")
-    plot_barh(axes[2], per_model.get("GradientBoosting", overall_df.head(10)), "GB | Top 10 Predictors", "(c)")
-    plot_barh(axes[3], per_model.get("XGBoost", overall_df.head(10)), "XGBoost | Top 10 Predictors", "(d)")
+    plot_barh(axes[0], overall_top, "Overall Top 20 Predictors", "(a)")
+    plot_barh(axes[1], per_model.get("RF", overall_top.head(10)), "RF | Top 10 Predictors", "(b)")
+    plot_barh(axes[2], per_model.get("GB", overall_top.head(10)), "GB | Top 10 Predictors", "(c)")
+    plot_barh(axes[3], per_model.get("XGBoost", overall_top.head(10)), "XGBoost | Top 10 Predictors", "(d)")
 
     legend_handles = [
         Patch(facecolor=group_colors["CHM"], edgecolor="black", label="CHM"),
@@ -5398,7 +5571,6 @@ def generate_top_predictors(o1_dir: Path, out_dir: Path, dpi: int, xlabel: str) 
         fontsize=8,
     )
 
-    # Larger left margin prevents long labels being clipped.
     fig.subplots_adjust(
         left=0.185,
         right=0.985,
@@ -6102,10 +6274,36 @@ except Exception as exc:
 # Table 7. SHAP predictor importance
 # ------------------------------------------------------------
 try:
-    t7 = shap_importance_df.copy()
+    algo_shap_dir = OUT_DIR / "O4_SHAP_and_complementarity" / "O4_algorithm_specific_SHAP"
+
+    if "all_algorithm_shap_df" in globals() and isinstance(all_algorithm_shap_df, pd.DataFrame):
+        t7 = all_algorithm_shap_df.copy()
+    elif (algo_shap_dir / "All_algorithm_specific_SHAP_predictor_importance.csv").exists():
+        t7 = pd.read_csv(algo_shap_dir / "All_algorithm_specific_SHAP_predictor_importance.csv")
+    else:
+        t7 = shap_importance_df.copy()
+
     t7 = _round_numeric(t7, 6)
-    final_tables["Table_07_SHAP_predictor_importance"] = _safe_table(t7, "Table_07_SHAP_predictor_importance")
-    final_tables["Table_07a_SHAP_top20_predictor_importance"] = _safe_table(t7.head(20), "Table_07a_SHAP_top20_predictor_importance")
+    final_tables["Table_07_SHAP_predictor_importance"] = _safe_table(
+        t7,
+        "Table_07_SHAP_predictor_importance"
+    )
+
+    if "overall_shap_df" in globals() and isinstance(overall_shap_df, pd.DataFrame):
+        t7a = overall_shap_df.head(20).copy()
+    elif (algo_shap_dir / "Table_07a_SHAP_top20_predictor_importance_across_algorithms.csv").exists():
+        t7a = pd.read_csv(algo_shap_dir / "Table_07a_SHAP_top20_predictor_importance_across_algorithms.csv")
+    elif (algo_shap_dir / "Overall_mean_SHAP_importance_across_algorithms.csv").exists():
+        t7a = pd.read_csv(algo_shap_dir / "Overall_mean_SHAP_importance_across_algorithms.csv").head(20)
+    else:
+        t7a = t7.head(20).copy()
+
+    t7a = _round_numeric(t7a, 6)
+    final_tables["Table_07a_SHAP_top20_predictor_importance"] = _safe_table(
+        t7a,
+        "Table_07a_SHAP_top20_predictor_importance"
+    )
+
 except Exception as exc:
     print("Could not create Table 07:", exc)
 
@@ -6113,9 +6311,35 @@ except Exception as exc:
 # Table 8. SHAP group importance
 # ------------------------------------------------------------
 try:
-    t8 = group_shap_df.copy()
+    algo_shap_dir = OUT_DIR / "O4_SHAP_and_complementarity" / "O4_algorithm_specific_SHAP"
+
+    if "all_algorithm_group_shap_df" in globals() and isinstance(all_algorithm_group_shap_df, pd.DataFrame):
+        t8 = all_algorithm_group_shap_df.copy()
+    elif (algo_shap_dir / "All_algorithm_specific_SHAP_group_importance.csv").exists():
+        t8 = pd.read_csv(algo_shap_dir / "All_algorithm_specific_SHAP_group_importance.csv")
+    else:
+        t8 = group_shap_df.copy()
+
     t8 = _round_numeric(t8, 6)
-    final_tables["Table_08_SHAP_group_importance"] = _safe_table(t8, "Table_08_SHAP_group_importance")
+    final_tables["Table_08_SHAP_group_importance"] = _safe_table(
+        t8,
+        "Table_08_SHAP_group_importance"
+    )
+
+    if "overall_group_shap_df" in globals() and isinstance(overall_group_shap_df, pd.DataFrame):
+        t8_overall = overall_group_shap_df.copy()
+    elif (algo_shap_dir / "Overall_SHAP_group_importance_across_algorithms.csv").exists():
+        t8_overall = pd.read_csv(algo_shap_dir / "Overall_SHAP_group_importance_across_algorithms.csv")
+    else:
+        t8_overall = pd.DataFrame()
+
+    if not t8_overall.empty:
+        t8_overall = _round_numeric(t8_overall, 6)
+        final_tables["Table_08a_overall_SHAP_group_importance"] = _safe_table(
+            t8_overall,
+            "Table_08a_overall_SHAP_group_importance"
+        )
+
 except Exception as exc:
     print("Could not create Table 08:", exc)
 
@@ -6464,4 +6688,3 @@ try:
 except Exception as _collect_exc:
     print('Warning: final collection step failed:', _collect_exc)
     traceback.print_exc()
-
