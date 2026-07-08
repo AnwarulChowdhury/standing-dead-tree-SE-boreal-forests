@@ -28,6 +28,27 @@ O7_DIR = OUT_DIR / "O7_condition_specific_SE_benefit"
 O7_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def display_feature_set_name(name):
+    """Use manuscript labels in figures only; keep internal names unchanged."""
+    return str(name).replace("RGBNIR", "MSI")
+
+
+def display_model_name(name):
+    """Use compact manuscript model labels in figures only."""
+    return str(name).replace("GradientBoosting", "GB")
+
+
+def safe_name(name):
+    """Make a string safe for filenames."""
+    return (
+        str(name)
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace(" ", "_")
+        .replace("+", "_plus_")
+    )
+
+
 # ------------------------------------------------------------
 # 1. Choose baseline and SE-enhanced feature sets
 # ------------------------------------------------------------
@@ -213,25 +234,42 @@ condition_compare_df.to_csv(
     index=False
 )
 
+# Average repeated-CV improvement values to one record per plot and model.
+# This avoids treating repeated predictions for the same plot as independent
+# observations in condition-correlation analyses.
+condition_plot_df = (
+    condition_compare_df
+    .groupby(["Index", "Model"], as_index=False)
+    .agg(
+        Observed=("Observed", "first"),
+        Mean_SE_Abs_Error_Improvement=("SE_Abs_Error_Improvement", "mean"),
+        Mean_SE_Squared_Error_Improvement=("SE_Squared_Error_Improvement", "mean"),
+        Percent_CV_Runs_SE_Better=("SE_Better", "mean"),
+        N_CV_Runs=("SE_Better", "count")
+    )
+)
+
+condition_plot_df["SE_Abs_Error_Improvement"] = condition_plot_df["Mean_SE_Abs_Error_Improvement"]
+condition_plot_df["SE_Squared_Error_Improvement"] = condition_plot_df["Mean_SE_Squared_Error_Improvement"]
+condition_plot_df["SE_Better"] = condition_plot_df["Percent_CV_Runs_SE_Better"] > 0.5
+
+condition_plot_df.to_csv(
+    O7_DIR / "O7_SE_error_improvement_per_plot_mean.csv",
+    index=False
+)
+
+# Use the plot-level aggregated table for all condition analyses below.
+condition_compare_df = condition_plot_df.copy()
+
 
 # ------------------------------------------------------------
 # 7. Add condition variables
 # ------------------------------------------------------------
 
-condition_vars = []
-
-# CHM structural variables
-condition_vars.extend(CHM_cols)
-
-# Spectral variables selected using common keywords
-possible_spectral_keywords = [
-    "NDVI", "EVI", "NIR", "Red", "Green", "Blue",
-    "red", "green", "blue", "nir"
-]
-
-for col in RGBNIR_cols:
-    if any(k in col for k in possible_spectral_keywords):
-        condition_vars.append(col)
+# Use all CHM and MSI/RGB-NIR predictors as potential condition variables.
+# The previous keyword filter could miss variables such as GNDVI, brightness,
+# ExG, or texture predictors.
+condition_vars = list(dict.fromkeys(CHM_cols + RGBNIR_cols))
 
 # Add observed target as condition
 condition_compare_df["Dead_F_observed"] = condition_compare_df["Observed"]
@@ -347,13 +385,19 @@ for model_name in condition_compare_df["Model"].unique():
             .agg(
                 Mean_SE_Abs_Error_Improvement=("SE_Abs_Error_Improvement", "mean"),
                 SD_SE_Abs_Error_Improvement=("SE_Abs_Error_Improvement", "std"),
-                Percent_SE_Better=("SE_Better", "mean"),
-                N=("SE_Better", "count")
+                Percent_Plots_SE_Better_Most_CV_Runs=("SE_Better", "mean"),
+                Mean_Percent_CV_Runs_SE_Better=("Percent_CV_Runs_SE_Better", "mean"),
+                N_Plots=("SE_Better", "count")
             )
             .reset_index()
         )
 
-        summary["Percent_SE_Better"] = summary["Percent_SE_Better"] * 100
+        summary["Percent_Plots_SE_Better_Most_CV_Runs"] = (
+            summary["Percent_Plots_SE_Better_Most_CV_Runs"] * 100
+        )
+        summary["Mean_Percent_CV_Runs_SE_Better"] = (
+            summary["Mean_Percent_CV_Runs_SE_Better"] * 100
+        )
         summary["Model"] = model_name
         summary["Condition_Variable"] = var
 
@@ -405,25 +449,12 @@ if not bin_summary_df.empty:
 
             plt.xlabel(f"{var} quartile")
             plt.ylabel("Mean absolute-error improvement from SE")
-            plt.title(f"SE benefit across {var}\n{model_name}")
+            plt.title(f"SE benefit across {var}\n{display_model_name(model_name)}")
 
             plt.tight_layout()
 
-            safe_model = (
-                str(model_name)
-                .replace("/", "_")
-                .replace("\\", "_")
-                .replace(" ", "_")
-                .replace("+", "_plus_")
-            )
-
-            safe_var = (
-                str(var)
-                .replace("/", "_")
-                .replace("\\", "_")
-                .replace(" ", "_")
-                .replace("+", "_plus_")
-            )
+            safe_model = safe_name(model_name)
+            safe_var = safe_name(var)
 
             plt.savefig(
                 O7_DIR / f"Figure_O7_SE_improvement_bins_{safe_model}_{safe_var}.png",
@@ -440,8 +471,9 @@ if not bin_summary_df.empty:
 
 top_corr_plot = condition_corr_df.head(20).copy()
 
+top_corr_plot["Model_plot"] = top_corr_plot["Model"].apply(display_model_name)
 top_corr_plot["Label"] = (
-    top_corr_plot["Model"] + " | " + top_corr_plot["Condition_Variable"]
+    top_corr_plot["Model_plot"] + " | " + top_corr_plot["Condition_Variable"]
 )
 
 top_corr_plot = top_corr_plot.sort_values(
@@ -553,7 +585,7 @@ model_markers = {
 corr_col = "Spearman_Correlation_with_SE_Improvement"
 
 def pretty_name(x):
-    return str(x).replace("_", " ")
+    return str(x).replace("RGBNIR", "MSI").replace("_", " ")
 
 corr_df["Condition_Label"] = corr_df["Condition_Variable"].apply(pretty_name)
 corr_df["Full_Label"] = corr_df["Model"] + " | " + corr_df["Condition_Label"]
@@ -591,122 +623,98 @@ fig, axes = plt.subplots(
     sharex=False
 )
 
-# -----------------------------
-# Panel A: reduced SE benefit
-# -----------------------------
-ax = axes[0]
-y = np.arange(len(neg_df))
+def plot_correlation_side(ax, side_df, panel_label, side_title, value_side):
+    y = np.arange(len(side_df))
 
-for i, row in neg_df.iterrows():
-    ax.scatter(
-        row[corr_col],
-        i,
-        color=model_colors[row["Model"]],
-        marker=model_markers[row["Model"]],
-        s=55
-    )
+    if side_df.empty:
+        ax.axvline(0, linestyle="--", linewidth=1, color="black")
+        ax.set_yticks([])
+        ax.set_xlabel("Spearman correlation", fontsize=9)
+        ax.text(
+            0.5,
+            0.5,
+            "No associations",
+            transform=ax.transAxes,
+            ha="center",
+            va="center",
+            fontsize=9
+        )
+        ax.set_xlim(-0.1, 0.1)
+    else:
+        for i, row in side_df.iterrows():
+            model_key = row["Model"]
+            ax.scatter(
+                row[corr_col],
+                i,
+                color=model_colors.get(model_key, "black"),
+                marker=model_markers.get(model_key, "o"),
+                s=55
+            )
 
-    ax.text(
-        row[corr_col] - 0.006,
-        i,
-        f"{row[corr_col]:.2f}",
-        ha="right",
-        va="center",
-        fontsize=8
-    )
+            if value_side == "left":
+                text_x = row[corr_col] - 0.006
+                ha = "right"
+            else:
+                text_x = row[corr_col] + 0.006
+                ha = "left"
 
-ax.axvline(0, linestyle="--", linewidth=1, color="black")
-ax.set_yticks(y)
-ax.set_yticklabels(neg_df["Full_Label"], fontsize=8.5)
-ax.set_xlabel("Spearman correlation", fontsize=9)
-ax.grid(axis="x", alpha=0.25)
+            ax.text(
+                text_x,
+                i,
+                f"{row[corr_col]:.2f}",
+                ha=ha,
+                va="center",
+                fontsize=8
+            )
 
-ax.set_xlim(
-    min(neg_df[corr_col].min() - 0.04, -0.22),
-    0.02
-)
+        ax.axvline(0, linestyle="--", linewidth=1, color="black")
+        ax.set_yticks(y)
+        ax.set_yticklabels(side_df["Full_Label"], fontsize=8.5)
+        ax.set_xlabel("Spearman correlation", fontsize=9)
+        ax.grid(axis="x", alpha=0.25)
 
-# Panel label
-ax.text(
-    0.01,
-    1.03,
-    "(a)",
-    transform=ax.transAxes,
-    fontsize=11,
-    fontweight="bold",
-    ha="left",
-    va="bottom"
-)
-
-# Vertical title on right side
-ax.text(
-    1.08,
-    0.5,
-    "Conditions associated with weaker SE benefit",
-    transform=ax.transAxes,
-    rotation=-90,
-    fontsize=9,
-    ha="center",
-    va="center"
-)
-
-# -----------------------------
-# Panel B: stronger SE benefit
-# -----------------------------
-ax = axes[1]
-y = np.arange(len(pos_df))
-
-for i, row in pos_df.iterrows():
-    ax.scatter(
-        row[corr_col],
-        i,
-        color=model_colors[row["Model"]],
-        marker=model_markers[row["Model"]],
-        s=55
-    )
+        if value_side == "left":
+            ax.set_xlim(min(side_df[corr_col].min() - 0.04, -0.22), 0.02)
+        else:
+            ax.set_xlim(-0.02, max(side_df[corr_col].max() + 0.04, 0.14))
 
     ax.text(
-        row[corr_col] + 0.006,
-        i,
-        f"{row[corr_col]:.2f}",
+        0.01,
+        1.03,
+        panel_label,
+        transform=ax.transAxes,
+        fontsize=11,
+        fontweight="bold",
         ha="left",
-        va="center",
-        fontsize=8
+        va="bottom"
     )
 
-ax.axvline(0, linestyle="--", linewidth=1, color="black")
-ax.set_yticks(y)
-ax.set_yticklabels(pos_df["Full_Label"], fontsize=8.5)
-ax.set_xlabel("Spearman correlation", fontsize=9)
-ax.grid(axis="x", alpha=0.25)
+    ax.text(
+        1.08,
+        0.5,
+        side_title,
+        transform=ax.transAxes,
+        rotation=-90,
+        fontsize=9,
+        ha="center",
+        va="center"
+    )
 
-ax.set_xlim(
-    -0.02,
-    max(pos_df[corr_col].max() + 0.04, 0.14)
+
+plot_correlation_side(
+    axes[0],
+    neg_df,
+    "(a)",
+    "Conditions associated with weaker SE benefit",
+    "left"
 )
 
-# Panel label
-ax.text(
-    0.01,
-    1.03,
+plot_correlation_side(
+    axes[1],
+    pos_df,
     "(b)",
-    transform=ax.transAxes,
-    fontsize=11,
-    fontweight="bold",
-    ha="left",
-    va="bottom"
-)
-
-# Vertical title on right side
-ax.text(
-    1.08,
-    0.5,
     "Conditions associated with stronger SE benefit",
-    transform=ax.transAxes,
-    rotation=-90,
-    fontsize=9,
-    ha="center",
-    va="center"
+    "right"
 )
 
 # -----------------------------
@@ -753,7 +761,11 @@ fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations.png", dpi=3
 fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations.svg", bbox_inches="tight")
 fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations.pdf", bbox_inches="tight")
 
+# Additional fixed-name copies for final manuscript figure selection.
+fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations_FIXED.png", dpi=300, bbox_inches="tight")
+fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations_FIXED.svg", bbox_inches="tight")
+fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations_FIXED.pdf", bbox_inches="tight")
+
 plt.close("all")
 
 # CELL
-
