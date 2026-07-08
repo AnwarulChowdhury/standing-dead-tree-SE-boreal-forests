@@ -6,8 +6,8 @@ The repository separates predictor extraction from modelling analysis.
 
 | Script | Purpose |
 |---|---|
-| `01a_extract_chm_predictors.py` | Extract CHM predictors from Finnish Forest Centre Latvusmalli data using per-plot fallback and partial-pixel weighting. |
-| `01b_extract_msi_predictors.py` | Extract aerial MSI/RGB-NIR predictors and vegetation-index summaries. |
+| `01a_extract_chm_predictors.py` | Extract CHM predictors from Finnish Forest Centre Latvusmalli data. |
+| `01b_extract_msi_predictors.py` | Extract aerial MSI predictors and vegetation-index summaries. |
 | `01c_extract_se_predictors.py` | Extract AlphaEarth 2025 embedding predictors and temporal-change dSE predictors. |
 | `01d_build_analysis_matrix.py` | Merge CHM, MSI, SE, and standing dead-tree fraction into one analysis-ready matrix. |
 
