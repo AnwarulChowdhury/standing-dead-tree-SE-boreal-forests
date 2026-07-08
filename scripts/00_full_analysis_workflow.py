@@ -614,7 +614,7 @@ models_and_params = {
             "model__learning_rate": [0.01, 0.03, 0.05, 0.1],
             "model__max_depth": [2, 3, 4],
             "model__subsample": [0.6, 0.8, 1.0],
-            "model__min_samples_leaf": [1, 2, 4],
+            "model__min_samples_leaf": [1, 2, 3],
             "model__max_features": ["sqrt", 0.5, 0.7, 1.0]
         }
     },
