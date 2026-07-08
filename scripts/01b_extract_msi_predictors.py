@@ -1,4 +1,4 @@
-"""Extract plot-level aerial MSI/RGB-NIR predictors only.
+"""Extract plot-level aerial MSI predictors only.
 
 This script extracts MSI predictors from aerial RGB-NIR rasters using exact
 partial-pixel weighting over 15 m plot-buffer polygons. 
