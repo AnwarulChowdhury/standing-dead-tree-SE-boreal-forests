@@ -9,7 +9,7 @@ Example
 python extract_chm_metrics_local_only.py \
     --polygons "plots_15m_buffers.shp" \
     --imagery-dir "D:/path/to/local/chm_tiles" \ ## need to change directory
-    --output "CHM_metrics.csv" \
+    --output "chm_predictors.csv" \
     --plot-id-col "Name" \
     --glob "*.tif"
 """
