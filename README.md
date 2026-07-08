@@ -6,7 +6,7 @@ The repository is organized so researchers can reproduce the modelling analysis 
 
 ## Methodological framework
 
-![Methodological framework](scripts/Methodological_framework.png)
+![Methodological framework](Methodological_framework.png)
 
 ## Repository structure
 
