@@ -6,7 +6,7 @@ The repository is organized so researchers can reproduce the modelling analysis 
 
 ## Methodological framework
 
-![Methodological framework](figures/methodological_framework.png)
+![Methodological framework](scripts/Methodological_framework.png)
 
 ## Repository structure
 
@@ -46,7 +46,7 @@ The repository is organized so researchers can reproduce the modelling analysis 
 - anonymized plot identifier;
 - standing dead-tree volume fraction response variable;
 - CHM predictors;
-- aerial MSI/RGB-NIR predictors;
+- aerial MSI predictors;
 - AlphaEarth satellite-embedding predictors;
 - temporal-change satellite-embedding predictors.
 
