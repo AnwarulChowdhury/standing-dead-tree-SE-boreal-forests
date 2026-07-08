@@ -29,6 +29,16 @@ O3_DIR = OUT_DIR / "O3_label_efficiency"
 O3_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def display_feature_set_name(name):
+    """Use manuscript labels in figures only; keep internal names unchanged."""
+    return str(name).replace("RGBNIR", "MSI")
+
+
+def display_model_name(name):
+    """Use compact manuscript model labels in figures only."""
+    return str(name).replace("GradientBoosting", "GB")
+
+
 # ------------------------------------------------------------
 # 2. Training-data proportions
 # ------------------------------------------------------------
@@ -382,12 +392,12 @@ for model_name in label_eff_summary_df["Model"].unique():
             yerr=data["RMSE_sd"],
             marker="o",
             capsize=4,
-            label=feature_name
+            label=display_feature_set_name(feature_name)
         )
 
     plt.xlabel("Training data used (%)")
     plt.ylabel("Test RMSE")
-    plt.title(f"Label-efficiency learning curve: RMSE\n{model_name}")
+    plt.title(f"Training-size sensitivity: RMSE\n{display_model_name(model_name)}")
     plt.legend(title="Predictor set")
     plt.tight_layout()
 
@@ -426,7 +436,7 @@ for model_name in label_eff_added_df["Model"].unique():
 
     plt.xlabel("Training data used (%)")
     plt.ylabel("RMSE improvement from adding SE (%)")
-    plt.title(f"SE added value under reduced training data\n{model_name}")
+    plt.title(f"SE added value under reduced training data\n{display_model_name(model_name)}")
 
     plt.tight_layout()
 
@@ -462,19 +472,14 @@ label_eff_summary = (
 )
 
 label_eff_summary.to_csv(
-    "O3_label_efficiency_summary.csv",
+    O3_DIR / "O3_label_efficiency_summary.csv",
     index=False
 )
 
 print(label_eff_summary)
 
 
-import os
-
-output_folder = r"C:/Users/anwarcho/Videos/RF_predictors/results"
-os.makedirs(output_folder, exist_ok=True)
-
-excel_path = os.path.join(output_folder, "O3_label_efficiency_summary.xlsx")
+excel_path = O3_DIR / "O3_label_efficiency_summary.xlsx"
 
 label_eff_summary.to_excel(excel_path, index=False)
 
@@ -504,17 +509,19 @@ for model_name in label_efficiency_models.keys():
             yerr=plot_df["RMSE_sd"],
             marker="o",
             capsize=4,
-            label=feature_name
+            label=display_feature_set_name(feature_name)
         )
 
     plt.xlabel("Training data used (%)")
     plt.ylabel("RMSE")
-    plt.title(f"Label efficiency based on RMSE: {model_name}")
+    plt.title(f"Training-size sensitivity based on RMSE: {display_model_name(model_name)}")
     plt.legend(title="Predictor set")
     plt.tight_layout()
 
+    safe_model_name = model_name.replace(" ", "_").replace("+", "_plus_")
+
     plt.savefig(
-        f"O3_label_efficiency_RMSE_{model_name}.png",
+        O3_DIR / f"O3_label_efficiency_RMSE_{safe_model_name}.png",
         dpi=300,
         bbox_inches="tight"
     )
@@ -562,7 +569,7 @@ for model_name in label_efficiency_models.keys():
             yerr=plot_df["R2_sd"],
             marker="o",
             capsize=4,
-            label=feature_name
+            label=display_feature_set_name(feature_name)
         )
 
     if not has_data:
@@ -571,7 +578,7 @@ for model_name in label_efficiency_models.keys():
 
     plt.xlabel("Training data used (%)")
     plt.ylabel("Test R²")
-    plt.title(f"Label efficiency based on R²\n{model_name}")
+    plt.title(f"Training-size sensitivity based on R²\n{display_model_name(model_name)}")
     plt.legend(title="Predictor set")
     plt.tight_layout()
 
@@ -601,42 +608,54 @@ for model_name in label_efficiency_models.keys():
             (label_eff_df["Model"] == model_name) &
             (label_eff_df["Train_Proportion"] == train_prop) &
             (label_eff_df["Feature_Set"] == "CHM+RGBNIR")
-        ].sort_values("Repeat")
+        ].copy()
 
         se_df = label_eff_df[
             (label_eff_df["Model"] == model_name) &
             (label_eff_df["Train_Proportion"] == train_prop) &
             (label_eff_df["Feature_Set"] == "CHM+RGBNIR+SE")
-        ].sort_values("Repeat")
+        ].copy()
 
-        delta_rmse = base_df["RMSE"].values - se_df["RMSE"].values
-        delta_r2 = se_df["R2"].values - base_df["R2"].values
-        delta_mae = base_df["MAE"].values - se_df["MAE"].values
+        paired_df = base_df.merge(
+            se_df,
+            on=["Model", "Train_Proportion", "Repeat"],
+            suffixes=("_without_SE", "_with_SE")
+        )
+
+        if paired_df.empty:
+            print(f"Skipping missing gain comparison: {model_name}, train proportion {train_prop}")
+            continue
+
+        delta_rmse = paired_df["RMSE_without_SE"] - paired_df["RMSE_with_SE"]
+        delta_r2 = paired_df["R2_with_SE"] - paired_df["R2_without_SE"]
+        delta_mae = paired_df["MAE_without_SE"] - paired_df["MAE_with_SE"]
 
         gain_rows.append({
             "Model": model_name,
             "Train_Proportion": train_prop,
-            "Delta_RMSE_mean": np.mean(delta_rmse),
-            "Delta_RMSE_sd": np.std(delta_rmse),
+            "N_Paired_Repeats": paired_df.shape[0],
+            "Delta_RMSE_mean": delta_rmse.mean(),
+            "Delta_RMSE_sd": delta_rmse.std(ddof=1) if paired_df.shape[0] > 1 else 0.0,
             "RMSE_improvement_percent": (
-                np.mean(delta_rmse) / base_df["RMSE"].mean()
+                delta_rmse.mean() / paired_df["RMSE_without_SE"].mean()
             ) * 100,
-            "Delta_R2_mean": np.mean(delta_r2),
-            "Delta_R2_sd": np.std(delta_r2),
-            "Delta_MAE_mean": np.mean(delta_mae),
-            "Delta_MAE_sd": np.std(delta_mae)
+            "Delta_R2_mean": delta_r2.mean(),
+            "Delta_R2_sd": delta_r2.std(ddof=1) if paired_df.shape[0] > 1 else 0.0,
+            "Delta_MAE_mean": delta_mae.mean(),
+            "Delta_MAE_sd": delta_mae.std(ddof=1) if paired_df.shape[0] > 1 else 0.0
         })
 
 label_eff_gain_df = pd.DataFrame(gain_rows)
 
 label_eff_gain_df.to_csv(
-    "O3_SE_gain_by_training_fraction.csv",
+    O3_DIR / "O3_SE_gain_by_training_fraction.csv",
     index=False
 )
 
 print(label_eff_gain_df)
 
 # CELL
+
 
 # ============================================================
 # Figure: SE improvement under reduced labels
@@ -654,7 +673,7 @@ for model_name in label_efficiency_models.keys():
         plot_df["Train_Proportion"] * 100,
         plot_df["RMSE_improvement_percent"],
         marker="o",
-        label=model_name
+        label=display_model_name(model_name)
     )
 
 plt.axhline(0, linestyle="--", linewidth=1)
@@ -671,7 +690,7 @@ plt.legend(title="Model", fontsize=10, title_fontsize=10)
 plt.tight_layout()
 
 plt.savefig(
-    "O3_SE_improvement_under_reduced_labels.png",
+    O3_DIR / "O3_SE_improvement_under_reduced_labels.png",
     dpi=300,
     bbox_inches="tight"
 )
@@ -679,4 +698,3 @@ plt.savefig(
 plt.close("all")
 
 # CELL
-
