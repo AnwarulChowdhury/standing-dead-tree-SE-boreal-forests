@@ -295,6 +295,14 @@ else:
 plot_df = added_value_df.copy()
 plot_df["Plot_Label"] = plot_df["Comparison"] + "\n" + plot_df["Model"]
 
+# Cosmetic labels for manuscript figures only.
+# Internal feature-set names remain unchanged for calculations.
+plot_df["Plot_Label"] = (
+    plot_df["Plot_Label"]
+    .str.replace("RGBNIR", "MSI", regex=False)
+    .str.replace("GradientBoosting", "GB", regex=False)
+)
+
 model_order = ["RF", "GradientBoosting", "XGBoost"]
 plot_df["Model"] = pd.Categorical(plot_df["Model"], categories=model_order, ordered=True)
 
