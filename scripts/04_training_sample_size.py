@@ -1,4 +1,4 @@
-# Objective 3:
+# Task 3:
 # Label-efficiency evaluation
 # Assess whether SE predictors improve performance
 # under reduced training-data scenarios
