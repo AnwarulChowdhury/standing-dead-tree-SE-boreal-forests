@@ -4,7 +4,7 @@ O4_DIR.mkdir(parents=True, exist_ok=True)
 print("Objective 4/5 outputs will be saved to:", O4_DIR)
 
 # ============================================================
-# Objective 4:
+# Task 4:
 # Model interpretability using SHAP
 # Evaluate importance of individual predictors and groups
 # ============================================================
