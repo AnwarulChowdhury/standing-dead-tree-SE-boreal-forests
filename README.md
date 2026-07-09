@@ -101,7 +101,7 @@ python scripts/01a_extract_chm_predictors.py \
   --delete-cache-after-run
 ```
 
-This script extracts Finnish Forest Centre Latvusmalli CHM predictors with partial-pixel weighting. It tries `uusin` first for each plot/map sheet and then falls back to the newest available annual file if no valid CHM pixels are found.
+This script extracts Finnish Forest Centre Latvusmalli CHM predictors with partial-pixel weighting.
 
 ### 2. MSI predictors
 
