@@ -1,11 +1,6 @@
 # ============================================================
 # This script starts from an already-extracted predictor CSV and reruns:
-#   Objective 1: nested CV model comparison
-#   Objective 2: SE added-value tests
-#   Objective 3: label-efficiency / training-size analysis
-#   Objective 4-5: SHAP interpretation, algorithm-specific SHAP importance, and complementarity
-#   Objective 7: condition-specific SE-benefit analysis
-# plus collection of all tables and figures into one run folder.
+#   Task 1: nested CV model comparison
 # ============================================================
 
 from __future__ import annotations
