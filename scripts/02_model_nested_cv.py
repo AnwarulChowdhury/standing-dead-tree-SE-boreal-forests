@@ -312,11 +312,15 @@ df = pd.read_csv(CSV_PATH)
 if target_col not in df.columns:
     raise ValueError(f"Target column '{target_col}' was not found.")
 
+# Drop target and plot identifier.
 drop_cols = [target_col]
 
-if "Name" in df.columns:
+if "plot_id" in df.columns:
+    drop_cols.append("plot_id")
+    sample_names = df["plot_id"].astype(str).copy()
+elif "Name" in df.columns:
     drop_cols.append("Name")
-    sample_names = df["Name"].copy()
+    sample_names = df["Name"].astype(str).copy()
 else:
     sample_names = pd.Series(df.index.astype(str), index=df.index, name="Sample_Name")
 
