@@ -25,7 +25,7 @@ The repository is organized so researchers can reproduce the modelling analysis 
 │   ├── 03_added_value_SE.py
 │   ├── 04_training_sample_size.py
 │   ├── 05_shap_analysis.py
-│   ├── 06_condition_specific_analysis.py
+│   ├── 06_plot_specific_analysis.py
 │   ├── 07_make_final_figures_tables.py
 │   ├── 08_spatial_sampling_summary.py
 │   ├── run_all_analysis.py
@@ -76,7 +76,7 @@ This executes the following stages in order:
 2. SE added-value analysis;
 3. training-size / label-efficiency analysis;
 4. SHAP interpretation and complementarity analysis;
-5. condition-specific SE-benefit analysis;
+5. plot-specific SE-benefit analysis;
 6. manuscript-ready figures and tables.
 
 The spatial-sampling summary script is optional and requires the private plot/study-area geometry file, which is not included in the public repository.
@@ -158,5 +158,5 @@ When `run_all_analysis.py` is completed, results are written under the selected 
 - paired SE added-value results;
 - label-efficiency results;
 - SHAP and complementarity outputs;
-- condition-specific SE-benefit outputs;
+- plot-specific SE-benefit outputs;
 - final manuscript-style figures and tables.
