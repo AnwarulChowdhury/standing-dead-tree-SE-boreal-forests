@@ -1,11 +1,10 @@
 # ============================================================
 # This script starts from an already-extracted predictor CSV:
-#   Objective 1: nested CV model comparison
-#   Objective 2: SE added-value tests
-#   Objective 3: label-efficiency / training-size analysis
-#   Objective 4-5: SHAP interpretation and complementarity
-#   Objective 7: condition-specific SE-benefit analysis
-# plus collection of all tables and figures into one run folder.
+#   Task 1: nested CV model comparison
+#   Task 2: SE added-value tests
+#   Task 3: label-efficiency / training-size analysis
+#   Task 4-5: SHAP interpretation and complementarity
+#   Task 7: plot-specific SE-benefit analysis
 # ============================================================
 
 from __future__ import annotations
@@ -122,6 +121,10 @@ def _parse_figure_selection(raw: str) -> set[str]:
         "1": "all",
         "condition": "o7",
         "conditions": "o7",
+        "plot": "o7",
+        "plots": "o7",
+        "plot_variable": "o7",
+        "plot_variables": "o7",
         "label": "o3",
         "label_efficiency": "o3",
         "se_gain": "o3se",
@@ -148,14 +151,14 @@ _FIGURE_GROUP_KEYWORDS = {
         "shap_interaction_complementarity_a4_landscape_fixed",
         "o3_label_efficiency_3x3_a4_fixed",
         "o3_rmse_improvement_from_se_by_training_size_fixed",
-        "figure_o7_split_dotplot_condition_associations_fixed",
+        "figure_o7_split_dotplot_plot_variable_associations_fixed",
         "observed_vs_predicted_grid_a4_fixed",
     ],
     "top": ["top_predictors_a4_exact_style_fixed"],
     "shap": ["shap_interaction_complementarity_a4_landscape_fixed"],
     "o3": ["o3_label_efficiency_3x3_a4_fixed"],
     "o3se": ["o3_rmse_improvement_from_se_by_training_size_fixed"],
-    "o7": ["figure_o7_split_dotplot_condition_associations_fixed"],
+    "o7": ["figure_o7_split_dotplot_plot_variable_associations_fixed"],
     "ovp": ["observed_vs_predicted_grid_a4_fixed"],
     "model": [
         "figure_01_nested_tuned_model_comparison",
@@ -3546,8 +3549,8 @@ except Exception as e:
 
 # ============================================================
 # Objective 7:
-# Condition-specific analysis
-# Under which forest structural or spectral conditions
+# Plot-specific SE-benefit analysis
+# Under which plot-level forest structural or spectral variables
 # do SE predictors provide the greatest improvement?
 # ============================================================
 
@@ -3559,6 +3562,7 @@ from pathlib import Path
 from sklearn.base import clone
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from matplotlib.lines import Line2D
 
 
 # ------------------------------------------------------------
@@ -3571,8 +3575,45 @@ except NameError:
     OUT_DIR = Path(r"C:\Users\results\O1_nested_tuning_outputs")
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-O7_DIR = OUT_DIR / "O7_condition_specific_SE_benefit"
+O7_DIR = OUT_DIR / "O7_plot_specific_SE_benefit"
 O7_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def display_feature_set_name(name):
+    """Use manuscript labels in figures only; keep internal names unchanged."""
+    return str(name).replace("RGBNIR", "MSI")
+
+
+def display_model_name(name):
+    """Use compact manuscript model labels in figures only."""
+    return str(name).replace("GradientBoosting", "GB")
+
+
+def safe_name(name):
+    """Make a string safe for filenames."""
+    return (
+        str(name)
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace(" ", "_")
+        .replace("+", "_plus_")
+    )
+
+
+def pretty_name(x):
+    """Make variable names cleaner for manuscript figures."""
+    return str(x).replace("RGBNIR", "MSI").replace("_", " ")
+
+
+def make_bin_labels(n_bins):
+    """Return readable bin labels for qcut output."""
+    if n_bins == 4:
+        return ["Low", "Medium-low", "Medium-high", "High"]
+    if n_bins == 3:
+        return ["Low", "Medium", "High"]
+    if n_bins == 2:
+        return ["Low", "High"]
+    return [f"Bin {i + 1}" for i in range(n_bins)]
 
 
 # ------------------------------------------------------------
@@ -3593,14 +3634,14 @@ if se_feature_set not in feature_sets:
 # 2. Select models
 # ------------------------------------------------------------
 
-# Use all models from Objective 1
-condition_models = {
+# Use all models from Objective 1.
+plot_models = {
     model_name: model_info["model"]
     for model_name, model_info in models_and_params.items()
 }
 
-# Option: only use best overall model
-# condition_models = {
+# Option: only use best overall model.
+# plot_models = {
 #     best_model_name: models_and_params[best_model_name]["model"]
 # }
 
@@ -3611,22 +3652,22 @@ condition_models = {
 
 # Use tuned k_per_group if available; otherwise use a reasonable default.
 if "best_final_params" in globals() and "selector__k_per_group" in best_final_params:
-    condition_k_per_group = best_final_params["selector__k_per_group"]
+    plot_k_per_group = best_final_params["selector__k_per_group"]
 else:
-    condition_k_per_group = k_grid[-1]
+    plot_k_per_group = k_grid[-1]
 
-print("Using k_per_group:", condition_k_per_group)
+print("Using k_per_group:", plot_k_per_group)
 
 
 # ------------------------------------------------------------
-# 4. Create / reuse repeated CV splitter
+# 4. Create or reuse repeated CV splitter
 # ------------------------------------------------------------
 
 # Use the same outer CV logic from Objective 1 if available.
 try:
-    condition_cv = outer_cv
+    plot_cv = outer_cv
 except NameError:
-    condition_cv = RepeatedStratifiedKFoldReg(
+    plot_cv = RepeatedStratifiedKFoldReg(
         n_splits=5,
         n_repeats=10,
         n_bins=5,
@@ -3638,9 +3679,9 @@ except NameError:
 # 5. Create repeated-CV predictions for baseline vs SE model
 # ------------------------------------------------------------
 
-condition_prediction_rows = []
+plot_prediction_rows = []
 
-for model_name, model in condition_models.items():
+for model_name, model in plot_models.items():
 
     print("\nModel:", model_name)
 
@@ -3661,7 +3702,7 @@ for model_name, model in condition_models.items():
 
         selector = GroupWiseSelectKBest(
             groups=groups,
-            k_per_group=condition_k_per_group
+            k_per_group=plot_k_per_group
         )
 
         pipe = Pipeline([
@@ -3670,7 +3711,7 @@ for model_name, model in condition_models.items():
         ])
 
         for fold_id, (train_idx, test_idx) in enumerate(
-            condition_cv.split(X_sub, y),
+            plot_cv.split(X_sub, y),
             start=1
         ):
 
@@ -3688,7 +3729,7 @@ for model_name, model in condition_models.items():
 
             for idx, obs, pred in zip(X_test.index, y_test, y_pred):
 
-                condition_prediction_rows.append({
+                plot_prediction_rows.append({
                     "Index": idx,
                     "CV_Run": fold_id,
                     "Model": model_name,
@@ -3700,10 +3741,10 @@ for model_name, model in condition_models.items():
                 })
 
 
-condition_pred_df = pd.DataFrame(condition_prediction_rows)
+plot_pred_df = pd.DataFrame(plot_prediction_rows)
 
-condition_pred_df.to_csv(
-    O7_DIR / "O7_condition_specific_predictions.csv",
+plot_pred_df.to_csv(
+    O7_DIR / "O7_plot_specific_predictions.csv",
     index=False
 )
 
@@ -3712,19 +3753,19 @@ condition_pred_df.to_csv(
 # 6. Convert long predictions to baseline vs SE comparison
 # ------------------------------------------------------------
 
-condition_compare_df = condition_pred_df.pivot_table(
+plot_compare_df = plot_pred_df.pivot_table(
     index=["Index", "CV_Run", "Model", "Observed"],
     columns="Feature_Set",
     values=["Predicted", "Abs_Error", "Squared_Error"],
     aggfunc="first"
 )
 
-condition_compare_df.columns = [
+plot_compare_df.columns = [
     "_".join(col).strip()
-    for col in condition_compare_df.columns.values
+    for col in plot_compare_df.columns.values
 ]
 
-condition_compare_df = condition_compare_df.reset_index()
+plot_compare_df = plot_compare_df.reset_index()
 
 required_cols = [
     f"Abs_Error_{baseline_feature_set}",
@@ -3735,78 +3776,106 @@ required_cols = [
 
 missing_cols = [
     col for col in required_cols
-    if col not in condition_compare_df.columns
+    if col not in plot_compare_df.columns
 ]
 
 if missing_cols:
     raise ValueError(f"Missing columns after pivot: {missing_cols}")
 
-condition_compare_df["SE_Abs_Error_Improvement"] = (
-    condition_compare_df[f"Abs_Error_{baseline_feature_set}"]
-    - condition_compare_df[f"Abs_Error_{se_feature_set}"]
+plot_compare_df["SE_Abs_Error_Improvement"] = (
+    plot_compare_df[f"Abs_Error_{baseline_feature_set}"]
+    - plot_compare_df[f"Abs_Error_{se_feature_set}"]
 )
 
-condition_compare_df["SE_Squared_Error_Improvement"] = (
-    condition_compare_df[f"Squared_Error_{baseline_feature_set}"]
-    - condition_compare_df[f"Squared_Error_{se_feature_set}"]
+plot_compare_df["SE_Squared_Error_Improvement"] = (
+    plot_compare_df[f"Squared_Error_{baseline_feature_set}"]
+    - plot_compare_df[f"Squared_Error_{se_feature_set}"]
 )
 
-condition_compare_df["SE_Better"] = (
-    condition_compare_df["SE_Abs_Error_Improvement"] > 0
+plot_compare_df["SE_Better"] = (
+    plot_compare_df["SE_Abs_Error_Improvement"] > 0
 )
 
-condition_compare_df.to_csv(
+plot_compare_df.to_csv(
     O7_DIR / "O7_SE_error_improvement_per_plot_CV.csv",
     index=False
 )
 
 
 # ------------------------------------------------------------
-# 7. Add condition variables
+# 7. Average repeated-CV values to one record per plot and model
 # ------------------------------------------------------------
 
-condition_vars = []
+# This avoids treating repeated predictions for the same plot
+# as independent observations in plot-level analyses.
+plot_summary_df = (
+    plot_compare_df
+    .groupby(["Index", "Model"], as_index=False)
+    .agg(
+        Observed=("Observed", "first"),
+        Mean_SE_Abs_Error_Improvement=("SE_Abs_Error_Improvement", "mean"),
+        Mean_SE_Squared_Error_Improvement=("SE_Squared_Error_Improvement", "mean"),
+        Percent_CV_Runs_SE_Better=("SE_Better", "mean"),
+        N_CV_Runs=("SE_Better", "count")
+    )
+)
 
-# CHM structural variables
-condition_vars.extend(CHM_cols)
+plot_summary_df["SE_Abs_Error_Improvement"] = (
+    plot_summary_df["Mean_SE_Abs_Error_Improvement"]
+)
 
-# Spectral variables selected using common keywords
-possible_spectral_keywords = [
-    "NDVI", "EVI", "NIR", "Red", "Green", "Blue",
-    "red", "green", "blue", "nir"
-]
+plot_summary_df["SE_Squared_Error_Improvement"] = (
+    plot_summary_df["Mean_SE_Squared_Error_Improvement"]
+)
 
-for col in RGBNIR_cols:
-    if any(k in col for k in possible_spectral_keywords):
-        condition_vars.append(col)
+plot_summary_df["SE_Better"] = (
+    plot_summary_df["Percent_CV_Runs_SE_Better"] > 0.5
+)
 
-# Add observed target as condition
-condition_compare_df["Dead_F_observed"] = condition_compare_df["Observed"]
-condition_vars.append("Dead_F_observed")
+plot_summary_df.to_csv(
+    O7_DIR / "O7_SE_error_improvement_per_plot_mean.csv",
+    index=False
+)
 
-condition_vars = list(dict.fromkeys(condition_vars))
+# Use the plot-level aggregated table for all analyses below.
+plot_compare_df = plot_summary_df.copy()
 
-# Add condition values from original X
-for col in condition_vars:
+
+# ------------------------------------------------------------
+# 8. Add plot-level variables
+# ------------------------------------------------------------
+
+# Use all CHM and MSI/RGB-NIR predictors as potential plot-level variables.
+# These describe each plot structurally or spectrally.
+plot_vars = list(dict.fromkeys(CHM_cols + RGBNIR_cols))
+
+# Add observed target as a plot-level variable.
+plot_compare_df["Dead_F_observed"] = plot_compare_df["Observed"]
+plot_vars.append("Dead_F_observed")
+
+plot_vars = list(dict.fromkeys(plot_vars))
+
+# Add plot-level variable values from the original X matrix.
+for col in plot_vars:
     if col in X.columns:
-        condition_compare_df[col] = condition_compare_df["Index"].map(X[col])
+        plot_compare_df[col] = plot_compare_df["Index"].map(X[col])
     elif col == "Dead_F_observed":
         pass
 
 
 # ------------------------------------------------------------
-# 8. Correlation between conditions and SE improvement
+# 9. Correlation between plot-level variables and SE improvement
 # ------------------------------------------------------------
 
-condition_corr_rows = []
+plot_corr_rows = []
 
-for model_name in condition_compare_df["Model"].unique():
+for model_name in plot_compare_df["Model"].unique():
 
-    model_df = condition_compare_df[
-        condition_compare_df["Model"] == model_name
+    model_df = plot_compare_df[
+        plot_compare_df["Model"] == model_name
     ].copy()
 
-    for var in condition_vars:
+    for var in plot_vars:
 
         if var not in model_df.columns:
             continue
@@ -3821,68 +3890,92 @@ for model_name in condition_compare_df["Model"].unique():
             method="spearman"
         )
 
-        condition_corr_rows.append({
+        if pd.isna(corr):
+            continue
+
+        plot_corr_rows.append({
             "Model": model_name,
-            "Condition_Variable": var,
+            "Plot_Variable": var,
             "Spearman_Correlation_with_SE_Improvement": corr,
             "Abs_Correlation": abs(corr)
         })
 
 
-condition_corr_df = pd.DataFrame(condition_corr_rows)
+plot_corr_df = pd.DataFrame(plot_corr_rows)
 
-if condition_corr_df.empty:
-    raise ValueError("No valid condition correlations were calculated.")
+if plot_corr_df.empty:
+    raise ValueError("No valid plot-level correlations were calculated.")
 
-condition_corr_df = condition_corr_df.sort_values(
+plot_corr_df = plot_corr_df.sort_values(
     "Abs_Correlation",
     ascending=False
 )
 
-condition_corr_df.to_csv(
-    O7_DIR / "O7_condition_correlations_with_SE_improvement.csv",
+plot_corr_df.to_csv(
+    O7_DIR / "O7_plot_variable_correlations_with_SE_improvement.csv",
     index=False
 )
 
-print("\nTop condition variables associated with SE improvement:")
-print(condition_corr_df.head(20))
+print("\nTop plot-level variables associated with SE improvement:")
+print(plot_corr_df.head(20))
 
 
 # ------------------------------------------------------------
-# 9. Bin-based condition analysis
+# 10. Bin-based plot-variable analysis
 # ------------------------------------------------------------
 
-top_condition_vars = (
-    condition_corr_df
-    .head(6)["Condition_Variable"]
+top_plot_vars = (
+    plot_corr_df
+    .head(6)["Plot_Variable"]
     .tolist()
 )
 
 bin_summary_rows = []
 
-for model_name in condition_compare_df["Model"].unique():
+for model_name in plot_compare_df["Model"].unique():
 
-    model_df = condition_compare_df[
-        condition_compare_df["Model"] == model_name
+    model_df = plot_compare_df[
+        plot_compare_df["Model"] == model_name
     ].copy()
 
-    for var in top_condition_vars:
+    for var in top_plot_vars:
 
         if var not in model_df.columns:
             continue
 
         temp = model_df[
-            [var, "SE_Abs_Error_Improvement", "SE_Better"]
+            [
+                var,
+                "SE_Abs_Error_Improvement",
+                "SE_Better",
+                "Percent_CV_Runs_SE_Better"
+            ]
         ].dropna().copy()
 
         if temp[var].nunique() < 5:
             continue
 
         try:
-            temp["Condition_Bin"] = pd.qcut(
+            preliminary_bins = pd.qcut(
                 temp[var],
                 q=4,
-                labels=["Low", "Medium-low", "Medium-high", "High"],
+                duplicates="drop"
+            )
+        except ValueError:
+            continue
+
+        n_bins = len(preliminary_bins.cat.categories)
+
+        if n_bins < 2:
+            continue
+
+        bin_labels = make_bin_labels(n_bins)
+
+        try:
+            temp["Plot_Variable_Bin"] = pd.qcut(
+                temp[var],
+                q=4,
+                labels=bin_labels,
                 duplicates="drop"
             )
         except ValueError:
@@ -3890,19 +3983,27 @@ for model_name in condition_compare_df["Model"].unique():
 
         summary = (
             temp
-            .groupby("Condition_Bin", observed=False)
+            .groupby("Plot_Variable_Bin", observed=False)
             .agg(
                 Mean_SE_Abs_Error_Improvement=("SE_Abs_Error_Improvement", "mean"),
                 SD_SE_Abs_Error_Improvement=("SE_Abs_Error_Improvement", "std"),
-                Percent_SE_Better=("SE_Better", "mean"),
-                N=("SE_Better", "count")
+                Percent_Plots_SE_Better_Most_CV_Runs=("SE_Better", "mean"),
+                Mean_Percent_CV_Runs_SE_Better=("Percent_CV_Runs_SE_Better", "mean"),
+                N_Plots=("SE_Better", "count")
             )
             .reset_index()
         )
 
-        summary["Percent_SE_Better"] = summary["Percent_SE_Better"] * 100
+        summary["Percent_Plots_SE_Better_Most_CV_Runs"] = (
+            summary["Percent_Plots_SE_Better_Most_CV_Runs"] * 100
+        )
+
+        summary["Mean_Percent_CV_Runs_SE_Better"] = (
+            summary["Mean_Percent_CV_Runs_SE_Better"] * 100
+        )
+
         summary["Model"] = model_name
-        summary["Condition_Variable"] = var
+        summary["Plot_Variable"] = var
 
         bin_summary_rows.append(summary)
 
@@ -3913,16 +4014,16 @@ else:
     bin_summary_df = pd.DataFrame()
 
 bin_summary_df.to_csv(
-    O7_DIR / "O7_condition_bin_summary.csv",
+    O7_DIR / "O7_plot_variable_bin_summary.csv",
     index=False
 )
 
-print("\nCondition-bin summary:")
+print("\nPlot-variable bin summary:")
 print(bin_summary_df.head())
 
 
 # ------------------------------------------------------------
-# 10. Figure: SE improvement across condition bins
+# 11. Figure: SE improvement across plot-variable bins
 # ------------------------------------------------------------
 
 if not bin_summary_df.empty:
@@ -3933,16 +4034,16 @@ if not bin_summary_df.empty:
             bin_summary_df["Model"] == model_name
         ]
 
-        for var in model_bin_df["Condition_Variable"].unique():
+        for var in model_bin_df["Plot_Variable"].unique():
 
             plot_df = model_bin_df[
-                model_bin_df["Condition_Variable"] == var
+                model_bin_df["Plot_Variable"] == var
             ].copy()
 
             plt.figure(figsize=(6.5, 5))
 
             plt.bar(
-                plot_df["Condition_Bin"].astype(str),
+                plot_df["Plot_Variable_Bin"].astype(str),
                 plot_df["Mean_SE_Abs_Error_Improvement"],
                 yerr=plot_df["SD_SE_Abs_Error_Improvement"],
                 capsize=4
@@ -3950,30 +4051,20 @@ if not bin_summary_df.empty:
 
             plt.axhline(0, linestyle="--", linewidth=1)
 
-            plt.xlabel(f"{var} quartile")
+            plt.xlabel(f"{pretty_name(var)} quartile")
             plt.ylabel("Mean absolute-error improvement from SE")
-            plt.title(f"SE benefit across {var}\n{model_name}")
+            plt.title(
+                f"SE benefit across plot-level {pretty_name(var)}\n"
+                f"{display_model_name(model_name)}"
+            )
 
             plt.tight_layout()
 
-            safe_model = (
-                str(model_name)
-                .replace("/", "_")
-                .replace("\\", "_")
-                .replace(" ", "_")
-                .replace("+", "_plus_")
-            )
-
-            safe_var = (
-                str(var)
-                .replace("/", "_")
-                .replace("\\", "_")
-                .replace(" ", "_")
-                .replace("+", "_plus_")
-            )
+            safe_model = safe_name(model_name)
+            safe_var = safe_name(var)
 
             plt.savefig(
-                O7_DIR / f"Figure_O7_SE_improvement_bins_{safe_model}_{safe_var}.png",
+                O7_DIR / f"Figure_O7_SE_improvement_plot_bins_{safe_model}_{safe_var}.png",
                 dpi=300,
                 bbox_inches="tight"
             )
@@ -3982,13 +4073,16 @@ if not bin_summary_df.empty:
 
 
 # ------------------------------------------------------------
-# 11. Figure: top condition correlations
+# 12. Figure: top plot-variable correlations
 # ------------------------------------------------------------
 
-top_corr_plot = condition_corr_df.head(20).copy()
+top_corr_plot = plot_corr_df.head(20).copy()
+
+top_corr_plot["Model_plot"] = top_corr_plot["Model"].apply(display_model_name)
+top_corr_plot["Plot_Label"] = top_corr_plot["Plot_Variable"].apply(pretty_name)
 
 top_corr_plot["Label"] = (
-    top_corr_plot["Model"] + " | " + top_corr_plot["Condition_Variable"]
+    top_corr_plot["Model_plot"] + " | " + top_corr_plot["Plot_Label"]
 )
 
 top_corr_plot = top_corr_plot.sort_values(
@@ -4006,13 +4100,13 @@ plt.barh(
 plt.axvline(0, linestyle="--", linewidth=1)
 
 plt.xlabel("Spearman correlation with SE error improvement")
-plt.ylabel("Model and condition variable")
-plt.title("Conditions associated with stronger SE benefit")
+plt.ylabel("Model and plot-level variable")
+plt.title("Plot-level variables associated with stronger SE benefit")
 
 plt.tight_layout()
 
 plt.savefig(
-    O7_DIR / "Figure_O7_top_condition_correlations_SE_improvement.png",
+    O7_DIR / "Figure_O7_top_plot_variable_correlations_SE_improvement.png",
     dpi=300,
     bbox_inches="tight"
 )
@@ -4021,62 +4115,56 @@ plt.close("all")
 
 
 # ------------------------------------------------------------
-# 12. Best condition-specific SE benefit table
+# 13. Best plot-level SE benefit table
 # ------------------------------------------------------------
 
 if not bin_summary_df.empty:
 
-    best_condition_table = (
+    best_plot_variable_table = (
         bin_summary_df
         .sort_values("Mean_SE_Abs_Error_Improvement", ascending=False)
     )
 
-    best_condition_table.to_csv(
-        O7_DIR / "O7_best_conditions_for_SE_benefit.csv",
+    best_plot_variable_table.to_csv(
+        O7_DIR / "O7_best_plot_variables_for_SE_benefit.csv",
         index=False
     )
 
-    print("\nBest conditions for SE benefit:")
-    print(best_condition_table.head(20))
+    print("\nBest plot-level variables for SE benefit:")
+    print(best_plot_variable_table.head(20))
 
 else:
-    print("\nNo bin-based condition table was created.")
+    best_plot_variable_table = pd.DataFrame()
+    print("\nNo bin-based plot-variable table was created.")
 
 
 print("\nObjective 7 outputs saved to:")
 print(O7_DIR)
 
-# CELL
-
-import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
-import numpy as np
-from matplotlib.lines import Line2D
 
 # ============================================================
-# Objective 7 alternative figure:
-# Split dot plot of negative and positive SE-benefit associations
+# Objective 7 alternative manuscript figure:
+# Split dot plot of negative and positive plot-level SE-benefit associations
 # ============================================================
 
 # -----------------------------
-# 1. File paths
+# 14. File paths
 # -----------------------------
 base_dir = O7_DIR
 
-corr_file = base_dir / "O7_condition_correlations_with_SE_improvement.csv"
+corr_file = base_dir / "O7_plot_variable_correlations_with_SE_improvement.csv"
 
 outdir = base_dir / "manuscript_figures"
 outdir.mkdir(parents=True, exist_ok=True)
 
 # -----------------------------
-# 2. Load data
+# 15. Load data
 # -----------------------------
 corr_df = pd.read_csv(corr_file)
 corr_df.columns = corr_df.columns.str.strip()
 
 # -----------------------------
-# 3. Clean model names and labels
+# 16. Clean model names and labels
 # -----------------------------
 corr_df["Model"] = corr_df["Model"].replace({
     "GradientBoosting": "GB",
@@ -4099,14 +4187,11 @@ model_markers = {
 
 corr_col = "Spearman_Correlation_with_SE_Improvement"
 
-def pretty_name(x):
-    return str(x).replace("_", " ")
-
-corr_df["Condition_Label"] = corr_df["Condition_Variable"].apply(pretty_name)
-corr_df["Full_Label"] = corr_df["Model"] + " | " + corr_df["Condition_Label"]
+corr_df["Plot_Label"] = corr_df["Plot_Variable"].apply(pretty_name)
+corr_df["Full_Label"] = corr_df["Model"] + " | " + corr_df["Plot_Label"]
 
 # -----------------------------
-# 4. Select strongest positive and negative associations
+# 17. Select strongest positive and negative associations
 # -----------------------------
 n_show = 10
 
@@ -4124,12 +4209,12 @@ pos_df = (
     .copy()
 )
 
-# Sort for display
+# Sort for display.
 neg_df = neg_df.sort_values(corr_col, ascending=False).reset_index(drop=True)
 pos_df = pos_df.sort_values(corr_col, ascending=True).reset_index(drop=True)
 
 # -----------------------------
-# 5. Plot
+# 18. Plot
 # -----------------------------
 fig, axes = plt.subplots(
     nrows=1,
@@ -4138,126 +4223,109 @@ fig, axes = plt.subplots(
     sharex=False
 )
 
-# -----------------------------
-# Panel A: reduced SE benefit
-# -----------------------------
-ax = axes[0]
-y = np.arange(len(neg_df))
 
-for i, row in neg_df.iterrows():
-    ax.scatter(
-        row[corr_col],
-        i,
-        color=model_colors[row["Model"]],
-        marker=model_markers[row["Model"]],
-        s=55
-    )
+def plot_correlation_side(ax, side_df, panel_label, side_title, value_side):
+    """Plot one side of the split dot plot."""
 
-    ax.text(
-        row[corr_col] - 0.006,
-        i,
-        f"{row[corr_col]:.2f}",
-        ha="right",
-        va="center",
-        fontsize=8
-    )
+    y = np.arange(len(side_df))
 
-ax.axvline(0, linestyle="--", linewidth=1, color="black")
-ax.set_yticks(y)
-ax.set_yticklabels(neg_df["Full_Label"], fontsize=8.5)
-ax.set_xlabel("Spearman correlation", fontsize=9)
-ax.grid(axis="x", alpha=0.25)
+    if side_df.empty:
+        ax.axvline(0, linestyle="--", linewidth=1, color="black")
+        ax.set_yticks([])
+        ax.set_xlabel("Spearman correlation", fontsize=9)
+        ax.text(
+            0.5,
+            0.5,
+            "No associations",
+            transform=ax.transAxes,
+            ha="center",
+            va="center",
+            fontsize=9
+        )
+        ax.set_xlim(-0.1, 0.1)
 
-ax.set_xlim(
-    min(neg_df[corr_col].min() - 0.04, -0.22),
-    0.02
-)
+    else:
+        for i, row in side_df.iterrows():
 
-# Panel label
-ax.text(
-    0.01,
-    1.03,
-    "(a)",
-    transform=ax.transAxes,
-    fontsize=11,
-    fontweight="bold",
-    ha="left",
-    va="bottom"
-)
+            model_key = row["Model"]
 
-# Vertical title on right side
-ax.text(
-    1.08,
-    0.5,
-    "Conditions associated with weaker SE benefit",
-    transform=ax.transAxes,
-    rotation=-90,
-    fontsize=9,
-    ha="center",
-    va="center"
-)
+            ax.scatter(
+                row[corr_col],
+                i,
+                color=model_colors.get(model_key, "black"),
+                marker=model_markers.get(model_key, "o"),
+                s=55
+            )
 
-# -----------------------------
-# Panel B: stronger SE benefit
-# -----------------------------
-ax = axes[1]
-y = np.arange(len(pos_df))
+            if value_side == "left":
+                text_x = row[corr_col] - 0.006
+                ha = "right"
+            else:
+                text_x = row[corr_col] + 0.006
+                ha = "left"
 
-for i, row in pos_df.iterrows():
-    ax.scatter(
-        row[corr_col],
-        i,
-        color=model_colors[row["Model"]],
-        marker=model_markers[row["Model"]],
-        s=55
-    )
+            ax.text(
+                text_x,
+                i,
+                f"{row[corr_col]:.2f}",
+                ha=ha,
+                va="center",
+                fontsize=8
+            )
+
+        ax.axvline(0, linestyle="--", linewidth=1, color="black")
+        ax.set_yticks(y)
+        ax.set_yticklabels(side_df["Full_Label"], fontsize=8.5)
+        ax.set_xlabel("Spearman correlation", fontsize=9)
+        ax.grid(axis="x", alpha=0.25)
+
+        if value_side == "left":
+            ax.set_xlim(min(side_df[corr_col].min() - 0.04, -0.22), 0.02)
+        else:
+            ax.set_xlim(-0.02, max(side_df[corr_col].max() + 0.04, 0.14))
 
     ax.text(
-        row[corr_col] + 0.006,
-        i,
-        f"{row[corr_col]:.2f}",
+        0.01,
+        1.03,
+        panel_label,
+        transform=ax.transAxes,
+        fontsize=11,
+        fontweight="bold",
         ha="left",
-        va="center",
-        fontsize=8
+        va="bottom"
     )
 
-ax.axvline(0, linestyle="--", linewidth=1, color="black")
-ax.set_yticks(y)
-ax.set_yticklabels(pos_df["Full_Label"], fontsize=8.5)
-ax.set_xlabel("Spearman correlation", fontsize=9)
-ax.grid(axis="x", alpha=0.25)
+    ax.text(
+        1.08,
+        0.5,
+        side_title,
+        transform=ax.transAxes,
+        rotation=-90,
+        fontsize=9,
+        ha="center",
+        va="center"
+    )
 
-ax.set_xlim(
-    -0.02,
-    max(pos_df[corr_col].max() + 0.04, 0.14)
+
+plot_correlation_side(
+    axes[0],
+    neg_df,
+    "(a)",
+    "Plot-level variables associated with weaker SE benefit",
+    "left"
 )
 
-# Panel label
-ax.text(
-    0.01,
-    1.03,
+plot_correlation_side(
+    axes[1],
+    pos_df,
     "(b)",
-    transform=ax.transAxes,
-    fontsize=11,
-    fontweight="bold",
-    ha="left",
-    va="bottom"
+    "Plot-level variables associated with stronger SE benefit",
+    "right"
 )
 
-# Vertical title on right side
-ax.text(
-    1.08,
-    0.5,
-    "Conditions associated with stronger SE benefit",
-    transform=ax.transAxes,
-    rotation=-90,
-    fontsize=9,
-    ha="center",
-    va="center"
-)
 
 # -----------------------------
-# Shared legend
+# 19. Shared legend
 # -----------------------------
 legend_handles = [
     Line2D(
@@ -4270,6 +4338,7 @@ legend_handles = [
         label=m
     )
     for m in model_order
+    if m in model_markers
 ]
 
 fig.legend(
@@ -4285,22 +4354,40 @@ fig.legend(
 fig.text(
     0.5,
     0.01,
-    "Positive correlations indicate greater SE benefit at higher condition-variable values; negative correlations indicate weaker SE benefit.",
+    (
+        "Positive correlations indicate greater SE benefit at higher plot-level variable values; "
+        "negative correlations indicate weaker SE benefit."
+    ),
     ha="center",
     fontsize=8
 )
 
-# Leave some extra right margin so vertical titles are not cut off
+# Leave some extra right margin so vertical titles are not cut off.
 plt.tight_layout(rect=(0, 0.05, 0.95, 0.96))
 
 # -----------------------------
-# 6. Save
+# 20. Save
 # -----------------------------
-fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations.png", dpi=300, bbox_inches="tight")
-fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations.svg", bbox_inches="tight")
-fig.savefig(outdir / "Figure_O7_split_dotplot_condition_associations.pdf", bbox_inches="tight")
+fig.savefig(
+    outdir / "Figure_O7_split_dotplot_plot_variable_associations.png",
+    dpi=300,
+    bbox_inches="tight"
+)
+fig.savefig(
+    outdir / "Figure_O7_split_dotplot_plot_variable_associations.svg",
+    bbox_inches="tight"
+)
+fig.savefig(
+    outdir / "Figure_O7_split_dotplot_plot_variable_associations.pdf",
+    bbox_inches="tight"
+)
 
 plt.close("all")
+
+# Backward-compatible aliases for any later code that still expects
+# the previous Objective 7 object names.
+condition_corr_df = plot_corr_df
+best_condition_table = best_plot_variable_table
 
 # CELL
 
@@ -5819,20 +5906,29 @@ def generate_o3_rmse_improvement(o1_dir: Path, out_dir: Path, dpi: int) -> None:
 
 
 # ============================================================
-# Figure 5: O7 condition-specific SE benefit split dotplot
+# Figure 5: O7 plot-specific SE benefit split dotplot
 # ============================================================
 
-def generate_o7_condition_dotplot(o1_dir: Path, out_dir: Path, dpi: int) -> None:
-    data_dir = o1_dir / "O7_condition_specific_SE_benefit"
-    corr_file = data_dir / "O7_condition_correlations_with_SE_improvement.csv"
+def generate_o7_plot_variable_dotplot(o1_dir: Path, out_dir: Path, dpi: int) -> None:
+    data_dir = o1_dir / "O7_plot_specific_SE_benefit"
+    corr_file = data_dir / "O7_plot_variable_correlations_with_SE_improvement.csv"
+
+    # Backward-compatible fallback for old run folders.
     if not corr_file.exists():
+        corr_file = find_file(o1_dir, "O7_plot_variable_correlations_with_SE_improvement.csv")
+    if corr_file is None:
         corr_file = find_file(o1_dir, "O7_condition_correlations_with_SE_improvement.csv")
     if corr_file is None:
-        raise FileNotFoundError("Could not find O7_condition_correlations_with_SE_improvement.csv")
+        raise FileNotFoundError(
+            "Could not find O7_plot_variable_correlations_with_SE_improvement.csv"
+        )
 
     corr_df = pd.read_csv(corr_file)
     corr_df.columns = corr_df.columns.str.strip()
-    corr_df["Model"] = corr_df["Model"].replace({"GradientBoosting": "GB", "Gradient_Boosting": "GB"})
+    corr_df["Model"] = corr_df["Model"].replace({
+        "GradientBoosting": "GB",
+        "Gradient_Boosting": "GB"
+    })
 
     model_order = ["RF", "GB", "XGBoost"]
     model_colors = {"RF": "#1f77b4", "GB": "#ff7f0e", "XGBoost": "#2ca02c"}
@@ -5842,12 +5938,37 @@ def generate_o7_condition_dotplot(o1_dir: Path, out_dir: Path, dpi: int) -> None
     if corr_col not in corr_df.columns:
         raise ValueError(f"Missing column: {corr_col}")
 
-    corr_df["Condition_Label"] = corr_df["Condition_Variable"].astype(str).str.replace("_", " ", regex=False)
-    corr_df["Full_Label"] = corr_df["Model"] + " | " + corr_df["Condition_Label"]
+    if "Plot_Variable" not in corr_df.columns and "Condition_Variable" in corr_df.columns:
+        corr_df = corr_df.rename(columns={"Condition_Variable": "Plot_Variable"})
+
+    if "Plot_Variable" not in corr_df.columns:
+        raise ValueError("Missing column: Plot_Variable")
+
+    corr_df["Plot_Label"] = (
+        corr_df["Plot_Variable"]
+        .astype(str)
+        .str.replace("RGBNIR", "MSI", regex=False)
+        .str.replace("_", " ", regex=False)
+    )
+
+    corr_df["Full_Label"] = corr_df["Model"] + " | " + corr_df["Plot_Label"]
 
     n_show = 10
-    neg_df = corr_df[corr_df[corr_col] < 0].sort_values(corr_col, ascending=True).head(n_show).copy()
-    pos_df = corr_df[corr_df[corr_col] > 0].sort_values(corr_col, ascending=False).head(n_show).copy()
+
+    neg_df = (
+        corr_df[corr_df[corr_col] < 0]
+        .sort_values(corr_col, ascending=True)
+        .head(n_show)
+        .copy()
+    )
+
+    pos_df = (
+        corr_df[corr_df[corr_col] > 0]
+        .sort_values(corr_col, ascending=False)
+        .head(n_show)
+        .copy()
+    )
+
     neg_df = neg_df.sort_values(corr_col, ascending=False).reset_index(drop=True)
     pos_df = pos_df.sort_values(corr_col, ascending=True).reset_index(drop=True)
 
@@ -5860,17 +5981,66 @@ def generate_o7_condition_dotplot(o1_dir: Path, out_dir: Path, dpi: int) -> None
         "axes.linewidth": 0.9,
     })
 
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(13.4, 5.9), dpi=dpi, sharex=False)
+    fig, axes = plt.subplots(
+        nrows=1,
+        ncols=2,
+        figsize=(13.4, 5.9),
+        dpi=dpi,
+        sharex=False
+    )
 
     def panel(ax, df, positive: bool):
         y = np.arange(len(df))
+
+        if df.empty:
+            ax.axvline(0, linestyle="--", linewidth=1, color="black")
+            ax.set_yticks([])
+            ax.set_xlabel("Spearman correlation", fontsize=9)
+            ax.text(
+                0.5,
+                0.5,
+                "No associations",
+                transform=ax.transAxes,
+                ha="center",
+                va="center",
+                fontsize=9
+            )
+            ax.set_xlim(-0.1, 0.1)
+            return
+
         for i, row in df.iterrows():
             model = row["Model"]
-            ax.scatter(row[corr_col], i, color=model_colors.get(model, "gray"), marker=model_markers.get(model, "o"), s=55, zorder=3)
+
+            ax.scatter(
+                row[corr_col],
+                i,
+                color=model_colors.get(model, "gray"),
+                marker=model_markers.get(model, "o"),
+                s=55,
+                zorder=3
+            )
+
             if positive:
-                ax.text(row[corr_col] + 0.006, i, f"{row[corr_col]:.2f}", ha="left", va="center", fontsize=8, clip_on=False)
+                ax.text(
+                    row[corr_col] + 0.006,
+                    i,
+                    f"{row[corr_col]:.2f}",
+                    ha="left",
+                    va="center",
+                    fontsize=8,
+                    clip_on=False
+                )
             else:
-                ax.text(row[corr_col] - 0.006, i, f"{row[corr_col]:.2f}", ha="right", va="center", fontsize=8, clip_on=False)
+                ax.text(
+                    row[corr_col] - 0.006,
+                    i,
+                    f"{row[corr_col]:.2f}",
+                    ha="right",
+                    va="center",
+                    fontsize=8,
+                    clip_on=False
+                )
+
         ax.axvline(0, linestyle="--", linewidth=1, color="black")
         ax.set_yticks(y)
         ax.set_yticklabels(df["Full_Label"], fontsize=8.5)
@@ -5879,28 +6049,115 @@ def generate_o7_condition_dotplot(o1_dir: Path, out_dir: Path, dpi: int) -> None
         ax.set_axisbelow(True)
 
     panel(axes[0], neg_df, positive=False)
+
     if not neg_df.empty:
         axes[0].set_xlim(min(neg_df[corr_col].min() - 0.04, -0.22), 0.02)
-    axes[0].text(0.01, 1.04, "(a)", transform=axes[0].transAxes, fontsize=11, fontweight="bold", ha="left", va="bottom", clip_on=False)
-    axes[0].text(1.12, 0.5, "Conditions associated with weaker SE benefit", transform=axes[0].transAxes, rotation=-90, fontsize=9, ha="center", va="center", clip_on=False)
+
+    axes[0].text(
+        0.01,
+        1.04,
+        "(a)",
+        transform=axes[0].transAxes,
+        fontsize=11,
+        fontweight="bold",
+        ha="left",
+        va="bottom",
+        clip_on=False
+    )
+
+    axes[0].text(
+        1.12,
+        0.5,
+        "Plot-level variables associated with weaker SE benefit",
+        transform=axes[0].transAxes,
+        rotation=-90,
+        fontsize=9,
+        ha="center",
+        va="center",
+        clip_on=False
+    )
 
     panel(axes[1], pos_df, positive=True)
+
     if not pos_df.empty:
         axes[1].set_xlim(-0.02, max(pos_df[corr_col].max() + 0.04, 0.14))
-    axes[1].text(0.01, 1.04, "(b)", transform=axes[1].transAxes, fontsize=11, fontweight="bold", ha="left", va="bottom", clip_on=False)
-    axes[1].text(1.12, 0.5, "Conditions associated with stronger SE benefit", transform=axes[1].transAxes, rotation=-90, fontsize=9, ha="center", va="center", clip_on=False)
+
+    axes[1].text(
+        0.01,
+        1.04,
+        "(b)",
+        transform=axes[1].transAxes,
+        fontsize=11,
+        fontweight="bold",
+        ha="left",
+        va="bottom",
+        clip_on=False
+    )
+
+    axes[1].text(
+        1.12,
+        0.5,
+        "Plot-level variables associated with stronger SE benefit",
+        transform=axes[1].transAxes,
+        rotation=-90,
+        fontsize=9,
+        ha="center",
+        va="center",
+        clip_on=False
+    )
 
     legend_handles = [
-        Line2D([0], [0], marker=model_markers[m], color="w", markerfacecolor=model_colors[m], markeredgecolor=model_colors[m], markersize=7, label=m)
+        Line2D(
+            [0],
+            [0],
+            marker=model_markers[m],
+            color="w",
+            markerfacecolor=model_colors[m],
+            markeredgecolor=model_colors[m],
+            markersize=7,
+            label=m
+        )
         for m in model_order
     ]
-    fig.legend(handles=legend_handles, loc="upper center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 1.02), fontsize=9)
-    fig.text(0.5, 0.015, "Positive correlations indicate greater SE benefit at higher condition-variable values; negative correlations indicate weaker SE benefit.", ha="center", fontsize=8)
-    fig.subplots_adjust(left=0.20, right=0.91, top=0.88, bottom=0.14, wspace=0.78)
 
-    save_fig(fig, out_dir / "Figure_O7_split_dotplot_condition_associations_FIXED", dpi=dpi, tight=True)
+    fig.legend(
+        handles=legend_handles,
+        loc="upper center",
+        ncol=3,
+        frameon=False,
+        bbox_to_anchor=(0.5, 1.02),
+        fontsize=9
+    )
+
+    fig.text(
+        0.5,
+        0.015,
+        (
+            "Positive correlations indicate greater SE benefit at higher plot-level variable values; "
+            "negative correlations indicate weaker SE benefit."
+        ),
+        ha="center",
+        fontsize=8
+    )
+
+    fig.subplots_adjust(
+        left=0.20,
+        right=0.91,
+        top=0.88,
+        bottom=0.14,
+        wspace=0.78
+    )
+
+    save_fig(
+        fig,
+        out_dir / "Figure_O7_split_dotplot_plot_variable_associations_FIXED",
+        dpi=dpi,
+        tight=True
+    )
 
 
+# Backward-compatible function name for old task lists.
+generate_o7_condition_dotplot = generate_o7_plot_variable_dotplot
 # ============================================================
 # Figure 6: Observed vs predicted overview grid
 # ============================================================
@@ -6000,7 +6257,7 @@ try:
         ("SHAP interaction/complementarity A4", lambda: generate_shap_interaction(OUT_DIR, FINAL_FIXED_FIG_DIR, 300)),
         ("O3 label-efficiency 3x3 A4", lambda: generate_o3_label_efficiency(OUT_DIR, FINAL_FIXED_FIG_DIR, 300)),
         ("O3 RMSE improvement from SE", lambda: generate_o3_rmse_improvement(OUT_DIR, FINAL_FIXED_FIG_DIR, 300)),
-        ("O7 condition-specific SE benefit dotplot", lambda: generate_o7_condition_dotplot(OUT_DIR, FINAL_FIXED_FIG_DIR, 300)),
+        ("O7 plot-specific SE benefit dotplot", lambda: generate_o7_plot_variable_dotplot(OUT_DIR, FINAL_FIXED_FIG_DIR, 300)),
         ("Observed-vs-predicted grid", lambda: generate_observed_predicted_grid(OUT_DIR, FINAL_FIXED_FIG_DIR, 300)),
     ]
 
@@ -6366,37 +6623,77 @@ except Exception as exc:
     print("Could not create Table 10:", exc)
 
 # ------------------------------------------------------------
-# Table 11. Condition-specific SE-benefit correlations
+# Table 11. Plot-level SE-benefit correlations
 # ------------------------------------------------------------
 try:
-    t11 = condition_corr_df.copy()
-    if "Model" in t11.columns:
+    if "plot_corr_df" in globals() and isinstance(plot_corr_df, pd.DataFrame):
+        t11 = plot_corr_df.copy()
+    elif "condition_corr_df" in globals() and isinstance(condition_corr_df, pd.DataFrame):
+        t11 = condition_corr_df.copy()
+        if "Condition_Variable" in t11.columns:
+            t11 = t11.rename(columns={"Condition_Variable": "Plot_Variable"})
+    else:
+        t11 = pd.DataFrame()
+
+    if "Model" in t11.columns and not t11.empty:
         t11["Model display"] = t11["Model"].apply(_display_model)
         cols = ["Model display"] + [c for c in t11.columns if c != "Model display"]
         t11 = t11[cols].rename(columns={"Model display": "Model"})
+
     t11 = _round_numeric(t11, 6)
-    final_tables["Table_11_condition_specific_SE_benefit_correlations"] = _safe_table(t11, "Table_11_condition_specific_SE_benefit_correlations")
+    final_tables["Table_11_plot_level_SE_benefit_correlations"] = _safe_table(
+        t11,
+        "Table_11_plot_level_SE_benefit_correlations"
+    )
 except Exception as exc:
     print("Could not create Table 11:", exc)
 
 # ------------------------------------------------------------
-# Table 12. Condition-bin summary and best conditions
+# Table 12. Plot-variable bin summary
 # ------------------------------------------------------------
 try:
     if "bin_summary_df" in globals() and isinstance(bin_summary_df, pd.DataFrame) and not bin_summary_df.empty:
-        t12 = _round_numeric(bin_summary_df.copy(), 5)
+        t12 = bin_summary_df.copy()
+        if "Condition_Variable" in t12.columns:
+            t12 = t12.rename(columns={"Condition_Variable": "Plot_Variable"})
+        if "Condition_Bin" in t12.columns:
+            t12 = t12.rename(columns={"Condition_Bin": "Plot_Variable_Bin"})
+        t12 = _round_numeric(t12, 5)
     else:
         t12 = pd.DataFrame()
-    final_tables["Table_12_condition_bin_summary"] = _safe_table(t12, "Table_12_condition_bin_summary")
+
+    final_tables["Table_12_plot_variable_bin_summary"] = _safe_table(
+        t12,
+        "Table_12_plot_variable_bin_summary"
+    )
 except Exception as exc:
     print("Could not create Table 12:", exc)
 
 try:
-    if "best_condition_table" in globals() and isinstance(best_condition_table, pd.DataFrame) and not best_condition_table.empty:
-        t13 = _round_numeric(best_condition_table.copy(), 5)
+    if (
+        "best_plot_variable_table" in globals()
+        and isinstance(best_plot_variable_table, pd.DataFrame)
+        and not best_plot_variable_table.empty
+    ):
+        t13 = best_plot_variable_table.copy()
+    elif (
+        "best_condition_table" in globals()
+        and isinstance(best_condition_table, pd.DataFrame)
+        and not best_condition_table.empty
+    ):
+        t13 = best_condition_table.copy()
+        if "Condition_Variable" in t13.columns:
+            t13 = t13.rename(columns={"Condition_Variable": "Plot_Variable"})
+        if "Condition_Bin" in t13.columns:
+            t13 = t13.rename(columns={"Condition_Bin": "Plot_Variable_Bin"})
     else:
         t13 = pd.DataFrame()
-    final_tables["Table_13_best_condition_specific_SE_benefit"] = _safe_table(t13, "Table_13_best_condition_specific_SE_benefit")
+
+    t13 = _round_numeric(t13, 5)
+    final_tables["Table_13_best_plot_level_SE_benefit"] = _safe_table(
+        t13,
+        "Table_13_best_plot_level_SE_benefit"
+    )
 except Exception as exc:
     print("Could not create Table 13:", exc)
 
