@@ -835,33 +835,6 @@ fig.savefig(
     bbox_inches="tight"
 )
 
-fig.savefig(
-    outdir / "Figure_O7_split_dotplot_plot_variable_associations.svg",
-    bbox_inches="tight"
-)
-
-fig.savefig(
-    outdir / "Figure_O7_split_dotplot_plot_variable_associations.pdf",
-    bbox_inches="tight"
-)
-
-# Additional fixed-name copies for final manuscript figure selection.
-fig.savefig(
-    outdir / "Figure_O7_split_dotplot_plot_variable_associations_FIXED.png",
-    dpi=300,
-    bbox_inches="tight"
-)
-
-fig.savefig(
-    outdir / "Figure_O7_split_dotplot_plot_variable_associations_FIXED.svg",
-    bbox_inches="tight"
-)
-
-fig.savefig(
-    outdir / "Figure_O7_split_dotplot_plot_variable_associations_FIXED.pdf",
-    bbox_inches="tight"
-)
-
 plt.close("all")
 
 print("\nObjective 7 manuscript figures saved to:")
