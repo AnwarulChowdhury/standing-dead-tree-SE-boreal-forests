@@ -34,13 +34,13 @@ def main() -> None:
     args = parse_args()
     script_dir = Path(__file__).resolve().parent
     stages = [
-        "02_model_nested_cv.py",
-        "03_added_value_SE.py",
-        "04_training_sample_size.py",
-        "05_shap_analysis.py",
-        "06_condition_specific_analysis.py",
-        "07_make_final_figures_tables.py",
-    ]
+    "02_model_nested_cv.py",
+    "03_added_value_SE.py",
+    "04_training_sample_size.py",
+    "05_shap_analysis.py",
+    "06_plot_specific_analysis.py",
+    "07_make_final_figures_tables.py",
+]
 
     namespace = {"__name__": "__main__"}
 
