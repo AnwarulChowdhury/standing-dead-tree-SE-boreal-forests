@@ -96,9 +96,10 @@ The predictor-extraction workflow is intentionally separated into three extracti
 ```bash
 python scripts/01a_extract_chm_predictors.py \
   --polygons path/to/plot_buffers.shp \
+  --imagery-dir path/to/local_chm_tiles \
   --output results/00_extracted_predictors/chm_predictors.csv \
-  --cache-dir temporary_chm_cache \
-  --delete-cache-after-run
+  --plot-id-col Name \
+  --glob "*.tif"
 ```
 
 This script extracts Finnish Forest Centre Latvusmalli CHM predictors with partial-pixel weighting.
