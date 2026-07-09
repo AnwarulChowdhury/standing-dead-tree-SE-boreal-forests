@@ -19,7 +19,7 @@ The repository separates predictor extraction from modelling analysis.
 | `03_added_value_SE.py` | Compare models with and without SE predictors. |
 | `04_training_sample_size.py` | Run training-size / label-efficiency analysis. |
 | `05_shap_analysis.py` | Run SHAP interpretation and complementarity analyses. |
-| `06_condition_specific_analysis.py` | Run condition-specific SE-benefit analysis. |
+| `06_plot_specific_analysis.py` | Run plot-specific SE-benefit analysis. |
 | `07_make_final_figures_tables.py` | Create manuscript-ready figures, tables, and collected outputs. |
 | `08_spatial_sampling_summary.py` | Create plot-count and spatial-distance summaries from the private plot/study-area geometry file. |
 | `run_all_analysis.py` | Execute scripts `02` through `07` in order. |
