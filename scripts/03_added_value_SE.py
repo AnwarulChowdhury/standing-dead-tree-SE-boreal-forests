@@ -1,4 +1,4 @@
-# Objective 2:
+# Task 2:
 # Added-value assessment of SE predictors
 # Comparing paired outer-CV performance with and without SE
 # ============================================================
